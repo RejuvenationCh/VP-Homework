@@ -9,17 +9,18 @@ class SizeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: colors.secondaryContainer,
-        borderRadius: BorderRadius.circular(8),
+    final theme = Theme.of(context);
+    return Chip(
+      label: Text(formatSize(bytes)),
+      labelStyle: theme.textTheme.labelSmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
       ),
-      child: Text(
-        formatSize(bytes),
-        style: TextStyle(fontSize: 11, color: colors.onSecondaryContainer),
-      ),
+      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+      side: BorderSide.none,
+      padding: EdgeInsets.zero,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }

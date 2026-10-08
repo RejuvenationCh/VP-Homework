@@ -17,37 +17,52 @@ class MediaTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return GestureDetector(
+    final theme = Theme.of(context);
+    final shape = theme.cardTheme.shape! as RoundedRectangleBorder;
+    return Semantics(
+      label: '${item.name}, ${formatSize(item.sizeBytes)}',
+      checked: isSelected,
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: colors.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? colors.primary : Colors.transparent,
+      excludeSemantics: true,
+      child: Card(
+        shape: shape.copyWith(
+          side: BorderSide(
+            color: isSelected ? theme.colorScheme.primary : Colors.transparent,
             width: 3,
           ),
         ),
-        padding: const EdgeInsets.all(6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // check icon in the corner
-            Align(
-              alignment: Alignment.topRight,
-              child: Icon(
-                isSelected ? Icons.check_circle : Icons.circle_outlined,
-                size: 18,
-                color: isSelected ? colors.primary : colors.outline,
-              ),
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: ExcludeFocus(
+                    child: SizedBox.square(
+                      dimension: 24,
+                      child: Checkbox(
+                        value: isSelected,
+                        onChanged: (_) => onTap(),
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Icon(categoryIcon(item.category), size: 32),
+                  ),
+                ),
+                Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                SizeBadge(bytes: item.sizeBytes),
+              ],
             ),
-            // placeholder instead of a real thumbnail
-            Expanded(child: Center(child: Icon(categoryIcon(item.category), size: 32))),
-            Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 2),
-            SizeBadge(bytes: item.sizeBytes),
-          ],
+          ),
         ),
       ),
     );

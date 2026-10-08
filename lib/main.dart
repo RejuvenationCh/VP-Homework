@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'features/media_cleaner/presentation/media_cleaner_screen.dart';
+import 'app_theme.dart';
+import 'features/media_cleaner/presentation/storage_overview_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,8 +15,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Media Cleaner',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true),
-      home: const MediaCleanerScreen(),
+      theme: buildAppTheme(),
+      home: const StorageOverviewScreen(),
     );
   }
 }

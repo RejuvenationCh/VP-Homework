@@ -8,17 +8,37 @@ import 'widgets/selection_action_bar.dart';
 import 'widgets/storage_summary_header.dart';
 
 class MediaCleanerScreen extends StatefulWidget {
-  const MediaCleanerScreen({super.key});
+  final List<MediaItem>? items;
+  final MediaCategory? initialCategory;
+  final int usedBytes;
+  final ValueChanged<Set<String>>? onRemoved;
+
+  const MediaCleanerScreen({
+    super.key,
+    this.items,
+    this.initialCategory,
+    this.usedBytes = mockUsedBytes,
+    this.onRemoved,
+  });
 
   @override
   State<MediaCleanerScreen> createState() => _MediaCleanerScreenState();
 }
 
 class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
-  final List<MediaItem> _items = List.of(mockMedia);
-  MediaCategory? _filter; // null = All
+  late final List<MediaItem> _items;
+  late MediaCategory? _filter; // null = All
+  late int _usedBytes;
   bool _sortBySize = true;
   final Set<String> _selectedIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _items = List.of(widget.items ?? mockMedia);
+    _filter = widget.initialCategory;
+    _usedBytes = widget.usedBytes;
+  }
 
   // filter first, then sort (size = biggest first, date = newest first)
   List<MediaItem> get _visibleItems {
@@ -60,10 +80,14 @@ class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
 
   // delete and offload do the same thing here, only diff message
   void _removeSelected(String message) {
+    final removedIds = Set<String>.of(_selectedIds);
+    final removedBytes = _sumBytes(true);
     setState(() {
       _items.removeWhere((item) => _selectedIds.contains(item.id));
       _selectedIds.clear();
+      _usedBytes -= removedBytes;
     });
+    widget.onRemoved?.call(removedIds);
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
   }
@@ -98,7 +122,7 @@ class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
       body: Column(
         children: [
           StorageSummaryHeader(
-            usedBytes: mockUsedBytes,
+            usedBytes: _usedBytes,
             totalBytes: mockTotalBytes,
             mediaBytes: _sumBytes(false),
           ),
