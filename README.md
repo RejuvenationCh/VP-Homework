@@ -1,18 +1,47 @@
-# media_cleaner
+# Media Cleaner
 
-A new Flutter project.
+Flutter coursework app with a storage overview and a file manager.
+Files are mock data. Delete and Offload remove them from memory until the app restarts.
 
-## Getting Started
+## Normal mode
 
-This project is a starting point for a Flutter application.
+```sh
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+This uses `lib/main.dart`. To run it in Chrome:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```sh
+flutter run -d chrome
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# VP-W2-Homework2
+## Emulator mode
+
+Runs the app inside a phone or tablet frame, adapted from lab04.
+
+```sh
+flutter run -d chrome -t lib/main_emulator.dart
+```
+
+Controls:
+
+- Screen: storage overview or file manager
+- Width: 320, 430, or 800 dp
+- Orientation: portrait or landscape
+- Data: normal, 200-character filename, zero items, or 500 items
+- Keyboard overlay, dark mode, and notch/gesture bar
+- Reset demo
+
+The keyboard toggle simulates the space taken up by a keyboard.
+Rotation and theme changes keep the current preview state.
+
+## Emulator
+
+List the available emulators, launch one, then run the app:
+
+```sh
+flutter emulators
+flutter emulators --launch <emulator-id>
+flutter devices
+flutter run -d <device-id>
+```

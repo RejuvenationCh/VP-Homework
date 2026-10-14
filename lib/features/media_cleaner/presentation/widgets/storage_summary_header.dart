@@ -25,11 +25,18 @@ class StorageSummaryHeader extends StatelessWidget {
           Text(
             '${formatSize(usedBytes)} of ${formatSize(totalBytes)} used',
             style: Theme.of(context).textTheme.titleMedium,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 8),
           LinearProgressIndicator(value: usedBytes / totalBytes),
           const SizedBox(height: 8),
-          Row(children: [const Text('Media: '), SizeBadge(bytes: mediaBytes)]),
+          Row(
+            children: [
+              const Text('Media: '),
+              SizeBadge(bytes: mediaBytes),
+            ],
+          ),
         ],
       ),
     );

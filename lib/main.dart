@@ -8,7 +8,16 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({
+    super.key,
+    this.home,
+    this.themeMode = ThemeMode.system,
+    this.builder,
+  });
+
+  final Widget? home;
+  final ThemeMode themeMode;
+  final TransitionBuilder? builder;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +25,10 @@ class MyApp extends StatelessWidget {
       title: 'Media Cleaner',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const StorageOverviewScreen(),
+      darkTheme: buildAppTheme(Brightness.dark),
+      themeMode: themeMode,
+      builder: builder,
+      home: home ?? const StorageOverviewScreen(),
     );
   }
 }

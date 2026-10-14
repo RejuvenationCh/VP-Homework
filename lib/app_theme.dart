@@ -1,27 +1,29 @@
 import 'package:flutter/material.dart';
 
-ThemeData buildAppTheme() {
+ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
   // blue for selections and actions, neutral surfaces for the files
-  final colors =
-      ColorScheme.fromSeed(
-        seedColor: const Color(0xFF3555B8),
-        brightness: Brightness.light,
-      ).copyWith(
-        primary: const Color(0xFF3555B8),
-        onPrimary: Colors.white,
-        surface: Colors.white,
-        surfaceContainerLow: const Color(0xFFF7F8FA),
-        surfaceContainer: const Color(0xFFF1F2F4),
-        surfaceContainerHighest: const Color(0xFFE9EBEF),
-        onSurface: const Color(0xFF202124),
-        onSurfaceVariant: const Color(0xFF565B65),
-        secondary: const Color(0xFF6655A1),
-        secondaryContainer: const Color(0xFFECE7FA),
-        onSecondaryContainer: const Color(0xFF30244F),
-        tertiary: const Color(0xFF326B50),
-        tertiaryContainer: const Color(0xFFDDF0E4),
-        onTertiaryContainer: const Color(0xFF153C29),
-      );
+  final seeded = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF3555B8),
+    brightness: brightness,
+  );
+  final colors = brightness == Brightness.dark
+      ? seeded
+      : seeded.copyWith(
+          primary: const Color(0xFF3555B8),
+          onPrimary: Colors.white,
+          surface: Colors.white,
+          surfaceContainerLow: const Color(0xFFF7F8FA),
+          surfaceContainer: const Color(0xFFF1F2F4),
+          surfaceContainerHighest: const Color(0xFFE9EBEF),
+          onSurface: const Color(0xFF202124),
+          onSurfaceVariant: const Color(0xFF565B65),
+          secondary: const Color(0xFF6655A1),
+          secondaryContainer: const Color(0xFFECE7FA),
+          onSecondaryContainer: const Color(0xFF30244F),
+          tertiary: const Color(0xFF326B50),
+          tertiaryContainer: const Color(0xFFDDF0E4),
+          onTertiaryContainer: const Color(0xFF153C29),
+        );
   final base = ThemeData(
     useMaterial3: true,
     colorScheme: colors,

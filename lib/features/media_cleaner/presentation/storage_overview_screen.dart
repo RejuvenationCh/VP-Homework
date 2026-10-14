@@ -5,18 +5,33 @@ import 'package:flutter/material.dart';
 import '../data/mock_media.dart';
 import '../models/media_item.dart';
 import 'media_cleaner_screen.dart';
+import 'widgets/media_empty_state.dart';
 
 typedef _Folder = ({String name, MediaCategory category, int count, int bytes});
 
 class StorageOverviewScreen extends StatefulWidget {
-  const StorageOverviewScreen({super.key});
+  const StorageOverviewScreen({super.key, this.items});
+
+  final List<MediaItem>? items;
 
   @override
   State<StorageOverviewScreen> createState() => _StorageOverviewScreenState();
 }
 
 class _StorageOverviewScreenState extends State<StorageOverviewScreen> {
-  final List<MediaItem> _items = List.of(mockMedia);
+  late final List<MediaItem> _items;
+
+  @override
+  void initState() {
+    super.initState();
+    _items = List.of(widget.items ?? mockMedia);
+  }
+
+  void _restoreDemo() => setState(() {
+    _items.clear();
+    _items.addAll(mockMedia);
+  });
+
   bool _largestFirst = true;
 
   int get _mediaBytes => _items.fold(0, (sum, item) => sum + item.sizeBytes);
@@ -56,6 +71,7 @@ class _StorageOverviewScreenState extends State<StorageOverviewScreen> {
           items: _items,
           initialCategory: category,
           usedBytes: _usedBytes,
+          onRestore: _restoreDemo,
           onRemoved: (ids) {
             setState(() => _items.removeWhere((item) => ids.contains(item.id)));
           },
@@ -71,118 +87,177 @@ class _StorageOverviewScreenState extends State<StorageOverviewScreen> {
     final text = theme.textTheme;
     final folders = _folders;
     final ordered = _largestFirst ? folders : folders.reversed.toList();
+    final mapPanel = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.phone_android_outlined),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Internal storage',
+                style: text.titleMedium,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              '${formatSize(mockTotalBytes - _usedBytes)} free',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text.titleSmall?.copyWith(color: colors.primary),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${formatSize(_usedBytes)} of ${formatSize(mockTotalBytes)} used',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: text.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(value: _usedBytes / mockTotalBytes),
+        const SizedBox(height: 20),
+        Text(
+          'Demo media folders · ${formatSize(_mediaBytes)}',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: text.titleMedium,
+        ),
+        if (_items.isEmpty)
+          MediaEmptyState(
+            message: 'No media left. All demo files have been removed.',
+            actionLabel: 'Restore demo files',
+            onAction: _restoreDemo,
+          )
+        else
+          _FolderMap(folders: folders, onOpen: _openFiles),
+        if (_items.isNotEmpty)
+          Text(
+            'Tap a folder to explore. Small folders have a minimum touch size.',
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+          ),
+      ],
+    );
+    final foldersPanel = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(child: Text('Folders', style: text.titleMedium)),
+            TextButton.icon(
+              onPressed: () => setState(() => _largestFirst = !_largestFirst),
+              icon: Icon(
+                _largestFirst ? Icons.arrow_downward : Icons.arrow_upward,
+                size: 18,
+              ),
+              label: const Text('Size'),
+            ),
+          ],
+        ),
+        for (final folder in ordered.where((folder) => folder.count > 0)) ...[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            minTileHeight: 64,
+            minVerticalPadding: 8,
+            horizontalTitleGap: 12,
+            leading: Icon(
+              Icons.folder,
+              size: 22,
+              color: _folderColors(colors, folder.category).ink,
+            ),
+            title: Text(
+              folder.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              '${folder.count} files',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 80,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        formatSize(folder.bytes),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      LinearProgressIndicator(
+                        value: _mediaBytes == 0
+                            ? 0
+                            : folder.bytes / _mediaBytes,
+                        minHeight: 3,
+                        borderRadius: BorderRadius.circular(2),
+                        semanticsLabel: '${folder.name} share of media storage',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Icon(Icons.chevron_right, size: 20),
+              ],
+            ),
+            onTap: () => _openFiles(folder.category),
+          ),
+          const Divider(height: 1, indent: 34),
+        ],
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: () => _openFiles(),
+          icon: const Icon(Icons.manage_search),
+          label: const Text('Review large files'),
+        ),
+      ],
+    );
     return Scaffold(
       appBar: AppBar(title: const Text('Media Cleaner')),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.phone_android_outlined),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text('Internal storage', style: text.titleMedium),
-                ),
-                Text(
-                  '${formatSize(mockTotalBytes - _usedBytes)} free',
-                  style: text.titleSmall?.copyWith(color: colors.primary),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${formatSize(_usedBytes)} of ${formatSize(mockTotalBytes)} used',
-              style: text.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
-            ),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(value: _usedBytes / mockTotalBytes),
-            const SizedBox(height: 20),
-            Text(
-              'Demo media folders · ${formatSize(_mediaBytes)}',
-              style: text.titleMedium,
-            ),
-            _FolderMap(folders: folders, onOpen: _openFiles),
-            Text(
-              'Tap a folder to explore. Small folders have a minimum touch size.',
-              style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: Text('Folders', style: text.titleMedium)),
-                TextButton.icon(
-                  onPressed: () =>
-                      setState(() => _largestFirst = !_largestFirst),
-                  icon: Icon(
-                    _largestFirst ? Icons.arrow_downward : Icons.arrow_upward,
-                    size: 18,
-                  ),
-                  label: const Text('Size'),
-                ),
-              ],
-            ),
-            for (final folder in ordered) ...[
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                minTileHeight: 64,
-                minVerticalPadding: 8,
-                horizontalTitleGap: 12,
-                leading: Icon(
-                  Icons.folder,
-                  size: 22,
-                  color: _folderColors(colors, folder.category).ink,
-                ),
-                title: Text(folder.name),
-                subtitle: Text(
-                  '${folder.count} files',
-                  style: text.bodySmall?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 80,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            formatSize(folder.bytes),
-                            style: text.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          LinearProgressIndicator(
-                            value: _mediaBytes == 0
-                                ? 0
-                                : folder.bytes / _mediaBytes,
-                            minHeight: 3,
-                            borderRadius: BorderRadius.circular(2),
-                            semanticsLabel:
-                                '${folder.name} share of media storage',
-                          ),
-                        ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const padding = EdgeInsets.fromLTRB(16, 8, 16, 24);
+            return constraints.maxWidth >= 700
+                ? Row(
+                    key: const Key('overview-wide-layout'),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: ListView(padding: padding, children: [mapPanel]),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Icon(Icons.chevron_right, size: 20),
-                  ],
-                ),
-                onTap: () => _openFiles(folder.category),
-              ),
-              const Divider(height: 1, indent: 34),
-            ],
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () => _openFiles(),
-              icon: const Icon(Icons.manage_search),
-              label: const Text('Review large files'),
-            ),
-          ],
+                      const VerticalDivider(width: 1),
+                      Expanded(
+                        child: ListView(
+                          padding: padding,
+                          children: [foldersPanel],
+                        ),
+                      ),
+                    ],
+                  )
+                : ListView(
+                    padding: padding,
+                    children: [
+                      mapPanel,
+                      const SizedBox(height: 16),
+                      foldersPanel,
+                    ],
+                  );
+          },
         ),
       ),
     );
@@ -217,14 +292,8 @@ class _FolderMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final visible = folders.where((folder) => folder.bytes > 0).toList();
-    if (visible.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 32),
-        child: Text('No media left. All demo files have been removed.'),
-      );
-    }
     final theme = Theme.of(context);
-    // ponytail: five fixed slots for five demo folders; pack dynamically if real folders are added
+    // shortcut: five fixed slots for demo folders; pack dynamically when real folders are added
     const centers = [
       Offset(.36, .43),
       Offset(.82, .28),
@@ -232,6 +301,7 @@ class _FolderMap extends StatelessWidget {
       Offset(.60, .85),
       Offset(.26, .85),
     ];
+    const slotDiameters = [.64, .32, .26, .24, .22];
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = math.min(constraints.maxWidth, 440.0);
@@ -248,7 +318,11 @@ class _FolderMap extends StatelessWidget {
                       final folder = visible[i];
                       final diameter = math.max(
                         48.0,
-                        largest * math.sqrt(folder.bytes / visible.first.bytes),
+                        math.min(
+                          width * slotDiameters[i],
+                          largest *
+                              math.sqrt(folder.bytes / visible.first.bytes),
+                        ),
                       );
                       final palette = _folderColors(
                         theme.colorScheme,
@@ -278,7 +352,11 @@ class _FolderMap extends StatelessWidget {
                                 child: InkWell(
                                   onTap: () => onOpen(folder.category),
                                   child: Center(
-                                    child: diameter >= 100
+                                    child:
+                                        diameter >= 100 &&
+                                            MediaQuery.textScalerOf(context)
+                                                    .scale(1) <=
+                                                1.3
                                         ? Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
@@ -289,6 +367,8 @@ class _FolderMap extends StatelessWidget {
                                               const SizedBox(height: 4),
                                               Text(
                                                 folder.name,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                                 style: theme
                                                     .textTheme
                                                     .titleSmall
@@ -298,6 +378,8 @@ class _FolderMap extends StatelessWidget {
                                               ),
                                               Text(
                                                 formatSize(folder.bytes),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                                 style: theme.textTheme.bodySmall
                                                     ?.copyWith(
                                                       color: palette.ink,

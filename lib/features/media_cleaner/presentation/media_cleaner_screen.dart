@@ -4,21 +4,24 @@ import '../data/mock_media.dart';
 import '../models/media_item.dart';
 import 'widgets/category_filter_chips.dart';
 import 'widgets/media_tile.dart';
+import 'widgets/media_empty_state.dart';
 import 'widgets/selection_action_bar.dart';
 import 'widgets/storage_summary_header.dart';
 
 class MediaCleanerScreen extends StatefulWidget {
   final List<MediaItem>? items;
   final MediaCategory? initialCategory;
-  final int usedBytes;
+  final int? usedBytes;
   final ValueChanged<Set<String>>? onRemoved;
+  final VoidCallback? onRestore;
 
   const MediaCleanerScreen({
     super.key,
     this.items,
     this.initialCategory,
-    this.usedBytes = mockUsedBytes,
+    this.usedBytes,
     this.onRemoved,
+    this.onRestore,
   });
 
   @override
@@ -37,7 +40,11 @@ class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
     super.initState();
     _items = List.of(widget.items ?? mockMedia);
     _filter = widget.initialCategory;
-    _usedBytes = widget.usedBytes;
+    _usedBytes =
+        widget.usedBytes ??
+        mockUsedBytes -
+            mockMedia.fold<int>(0, (sum, item) => sum + item.sizeBytes) +
+            _sumBytes(false);
   }
 
   // filter first, then sort (size = biggest first, date = newest first)
@@ -88,8 +95,11 @@ class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
       _usedBytes -= removedBytes;
     });
     widget.onRemoved?.call(removedIds);
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, maxLines: 2, overflow: TextOverflow.ellipsis),
+      ),
+    );
   }
 
   void _deleteSelected() {
@@ -119,33 +129,93 @@ class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          StorageSummaryHeader(
-            usedBytes: _usedBytes,
-            totalBytes: mockTotalBytes,
-            mediaBytes: _sumBytes(false),
-          ),
-          CategoryFilterChips(selected: _filter, onSelected: _setFilter),
-          Expanded(
-            child: visible.isEmpty
-                ? const Center(child: Text('No media'))
-                : GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 700;
+            final header = Column(
+              children: [
+                StorageSummaryHeader(
+                  usedBytes: _usedBytes,
+                  totalBytes: mockTotalBytes,
+                  mediaBytes: _sumBytes(false),
+                ),
+                CategoryFilterChips(
+                  selected: _filter,
+                  onSelected: _setFilter,
+                  wrap: wide,
+                ),
+              ],
+            );
+            final files = CustomScrollView(
+              key: const Key('files-scroll'),
+              slivers: [
+                if (!wide) SliverToBoxAdapter(child: header),
+                if (visible.isEmpty)
+                  SliverToBoxAdapter(
+                    child: MediaEmptyState(
+                      message: _items.isEmpty
+                          ? 'No media left. All demo files have been removed.'
+                          : 'No files in this category.',
+                      actionLabel: _items.isEmpty
+                          ? 'Restore demo files'
+                          : 'Show all files',
+                      onAction: () => setState(() {
+                        _filter = null;
+                        if (_items.isEmpty) {
+                          _items.addAll(mockMedia);
+                          _usedBytes = mockUsedBytes;
+                          widget.onRestore?.call();
+                        }
+                      }),
                     ),
-                    itemCount: visible.length,
-                    itemBuilder: (context, i) => MediaTile(
-                      item: visible[i],
-                      isSelected: _selectedIds.contains(visible[i].id),
-                      onTap: () => _toggleSelect(visible[i].id),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.all(16),
+                    sliver: SliverLayoutBuilder(
+                      builder: (context, constraints) => SliverGrid.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: constraints.crossAxisExtent < 360
+                              ? 2
+                              : constraints.crossAxisExtent < 700
+                              ? 3
+                              : 4,
+                          mainAxisExtent:
+                              160 +
+                              48 *
+                                  (MediaQuery.textScalerOf(context).scale(1) -
+                                      1),
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                        ),
+                        itemCount: visible.length,
+                        itemBuilder: (context, i) => MediaTile(
+                          item: visible[i],
+                          isSelected: _selectedIds.contains(visible[i].id),
+                          onTap: () => _toggleSelect(visible[i].id),
+                        ),
+                      ),
                     ),
                   ),
-          ),
-        ],
+              ],
+            );
+            return wide
+                ? Row(
+                    key: const Key('files-wide-layout'),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 250,
+                        child: SingleChildScrollView(child: header),
+                      ),
+                      const VerticalDivider(width: 1),
+                      Expanded(child: files),
+                    ],
+                  )
+                : files;
+          },
+        ),
       ),
       bottomNavigationBar: _selectedIds.isEmpty
           ? null
