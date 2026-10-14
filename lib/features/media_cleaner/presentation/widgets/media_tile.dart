@@ -7,12 +7,14 @@ class MediaTile extends StatelessWidget {
   final MediaItem item;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool showNameOverflow;
 
   const MediaTile({
     super.key,
     required this.item,
     required this.isSelected,
     required this.onTap,
+    this.showNameOverflow = false,
   });
 
   @override
@@ -57,7 +59,11 @@ class MediaTile extends StatelessWidget {
                     child: Icon(categoryIcon(item.category), size: 32),
                   ),
                 ),
-                Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                // H2 deliberately removes the filename's width constraint.
+                if (showNameOverflow)
+                  Row(children: [Text(item.name)])
+                else
+                  Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
                 SizeBadge(bytes: item.sizeBytes),
               ],

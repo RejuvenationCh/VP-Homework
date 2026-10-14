@@ -8,6 +8,7 @@ class SelectionActionBar extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onOffload;
   final VoidCallback onClear;
+  final bool showOverflow;
 
   const SelectionActionBar({
     super.key,
@@ -16,6 +17,7 @@ class SelectionActionBar extends StatelessWidget {
     required this.onDelete,
     required this.onOffload,
     required this.onClear,
+    this.showOverflow = false,
   });
 
   @override
@@ -52,6 +54,10 @@ class SelectionActionBar extends StatelessWidget {
                   ),
                 ],
               );
+              // H2 forces summary and controls into one non-flexible row.
+              if (showOverflow) {
+                return Row(children: [summary, ...actions.children]);
+              }
               return constraints.maxWidth < 398
                   ? Column(
                       mainAxisSize: MainAxisSize.min,

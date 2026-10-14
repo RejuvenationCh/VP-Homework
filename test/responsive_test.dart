@@ -187,24 +187,24 @@ void main() {
     await tester.tap(find.text('File manager'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('files-wide-layout')), findsOneWidget);
-    await tester.ensureVisible(find.text('Zero items'));
+    await revealPanel(tester, find.text('Zero items'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Zero items'));
     await tester.pumpAndSettle();
     expect(find.text('Restore demo files'), findsOneWidget);
-    await tester.ensureVisible(find.text('Dark mode'));
+    await revealPanel(tester, find.text('Dark mode'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Dark mode'));
     await tester.pumpAndSettle();
     final inner = tester.element(find.byType(MediaCleanerScreen));
     expect(Theme.of(inner).brightness, Brightness.dark);
     expect(MediaQuery.sizeOf(inner), const Size(800, 1280));
-    await tester.ensureVisible(find.text('Keyboard open'));
+    await revealPanel(tester, find.text('Keyboard open'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Keyboard open'));
     await tester.pumpAndSettle();
     expect(MediaQuery.viewInsetsOf(inner).bottom, 260);
-    await tester.ensureVisible(find.text('Landscape'));
+    await revealPanel(tester, find.text('Landscape'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Landscape'));
     await tester.pumpAndSettle();
@@ -261,4 +261,11 @@ void main() {
     expect(find.widgetWithText(ListTile, 'DCIM'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+}
+
+Future<void> revealPanel(WidgetTester tester, Finder control) async {
+  final scrollable = find.byType(Scrollable).first;
+  tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+  await tester.pumpAndSettle();
+  await tester.scrollUntilVisible(control, 180, scrollable: scrollable);
 }

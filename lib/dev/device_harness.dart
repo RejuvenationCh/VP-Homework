@@ -4,6 +4,7 @@ import '../features/media_cleaner/presentation/media_cleaner_screen.dart';
 import '../features/media_cleaner/presentation/storage_overview_screen.dart';
 import '../main.dart';
 import 'responsive_fixtures.dart';
+import 'constraint_scenario.dart';
 
 // Adapted from W4/lab04: sized frame + MediaQuery + FittedBox.scaleDown.
 enum DemoDevice {
@@ -16,6 +17,14 @@ enum DemoDevice {
   final Size size;
 }
 
+enum _Screen {
+  overview('Storage overview'),
+  files('File manager');
+
+  const _Screen(this.label);
+  final String label;
+}
+
 class DeviceHarness extends StatefulWidget {
   const DeviceHarness({super.key});
 
@@ -26,12 +35,14 @@ class DeviceHarness extends StatefulWidget {
 class _DeviceHarnessState extends State<DeviceHarness> {
   DemoDevice _device = DemoDevice.small;
   DemoData _data = DemoData.normal;
-  bool _files = false;
+  _Screen _page = _Screen.overview;
   bool _landscape = false;
   bool _keyboard = false;
   bool _dark = false;
   bool _insets = false;
   int _revision = 0;
+  ConstraintCase? _constraint;
+  bool _showFix = true;
 
   Size get _screen => _landscape ? _device.size.flipped : _device.size;
 
@@ -93,21 +104,51 @@ class _DeviceHarnessState extends State<DeviceHarness> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Try both screens and keep the debug console open for overflow warnings.',
+          'Choose a screen. H2 deliberately shows overflow errors when Show fix is off.',
         ),
         const SizedBox(height: 16),
         group('Screen', [
-          ChoiceChip(
-            label: const Text('Storage overview'),
-            selected: !_files,
-            onSelected: (_) => setState(() => _files = false),
-          ),
-          ChoiceChip(
-            label: const Text('File manager'),
-            selected: _files,
-            onSelected: (_) => setState(() => _files = true),
-          ),
+          for (final screen in _Screen.values)
+            ChoiceChip(
+              label: Text(screen.label),
+              selected: _page == screen,
+              onSelected: (_) => setState(() {
+                _page = screen;
+                _constraint = null;
+                _showFix = true;
+              }),
+            ),
         ]),
+        group('H2 errors on the file manager', [
+          ChoiceChip(
+            label: const Text('Off'),
+            selected: _constraint == null,
+            onSelected: (_) => setState(() {
+              _constraint = null;
+              _showFix = true;
+            }),
+          ),
+          for (final fault in ConstraintCase.values)
+            ChoiceChip(
+              label: Text(fault.label),
+              selected: _constraint == fault,
+              onSelected: (_) => setState(() {
+                _page = _Screen.files;
+                _constraint = fault;
+                _showFix = true;
+                _data = fault == ConstraintCase.longName
+                    ? DemoData.longName
+                    : DemoData.normal;
+              }),
+            ),
+        ]),
+        if (_constraint != null)
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Show fix'),
+            value: _showFix,
+            onChanged: (value) => setState(() => _showFix = value),
+          ),
         group('Device', [
           for (final device in DemoDevice.values)
             ChoiceChip(
@@ -204,15 +245,22 @@ class _DeviceHarnessState extends State<DeviceHarness> {
                     children: [
                       Positioned.fill(
                         child: MyApp(
-                          key: ValueKey((_data, _files, _revision)),
+                          key: ValueKey((_data, _page, _constraint, _revision)),
                           themeMode: _dark ? ThemeMode.dark : ThemeMode.light,
                           // Override after MaterialApp creates its MediaQuery so routes
                           // and Scaffold both receive the simulated constraints.
                           builder: (context, child) =>
                               MediaQuery(data: media, child: child!),
-                          home: _files
-                              ? MediaCleanerScreen(items: _data.items)
-                              : StorageOverviewScreen(items: _data.items),
+                          home: switch (_page) {
+                            _Screen.overview => StorageOverviewScreen(
+                              items: _data.items,
+                            ),
+                            _Screen.files => MediaCleanerScreen(
+                              items: _data.items,
+                              constraint: _constraint,
+                              showConstraintError: !_showFix,
+                            ),
+                          },
                         ),
                       ),
                       if (padding.top > 0)

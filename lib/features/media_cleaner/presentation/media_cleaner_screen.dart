@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../dev/constraint_scenario.dart';
+
 import '../data/mock_media.dart';
 import '../models/media_item.dart';
 import 'widgets/category_filter_chips.dart';
@@ -14,6 +16,8 @@ class MediaCleanerScreen extends StatefulWidget {
   final int? usedBytes;
   final ValueChanged<Set<String>>? onRemoved;
   final VoidCallback? onRestore;
+  final ConstraintCase? constraint;
+  final bool showConstraintError;
 
   const MediaCleanerScreen({
     super.key,
@@ -22,6 +26,8 @@ class MediaCleanerScreen extends StatefulWidget {
     this.usedBytes,
     this.onRemoved,
     this.onRestore,
+    this.constraint,
+    this.showConstraintError = false,
   });
 
   @override
@@ -40,6 +46,9 @@ class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
     super.initState();
     _items = List.of(widget.items ?? mockMedia);
     _filter = widget.initialCategory;
+    if (widget.constraint == ConstraintCase.actionRow && _items.isNotEmpty) {
+      _selectedIds.add(_items.first.id);
+    }
     _usedBytes =
         widget.usedBytes ??
         mockUsedBytes -
@@ -182,16 +191,24 @@ class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
                               ? 3
                               : 4,
                           mainAxisExtent:
-                              160 +
-                              48 *
-                                  (MediaQuery.textScalerOf(context).scale(1) -
-                                      1),
+                              widget.showConstraintError &&
+                                  widget.constraint == ConstraintCase.shortTile
+                              ? 64
+                              : 160 +
+                                    48 *
+                                        (MediaQuery.textScalerOf(context)
+                                                .scale(1) -
+                                            1),
                           mainAxisSpacing: 8,
                           crossAxisSpacing: 8,
                         ),
                         itemCount: visible.length,
                         itemBuilder: (context, i) => MediaTile(
                           item: visible[i],
+                          showNameOverflow:
+                              i == 0 &&
+                              widget.showConstraintError &&
+                              widget.constraint == ConstraintCase.longName,
                           isSelected: _selectedIds.contains(visible[i].id),
                           onTap: () => _toggleSelect(visible[i].id),
                         ),
@@ -220,6 +237,9 @@ class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
       bottomNavigationBar: _selectedIds.isEmpty
           ? null
           : SelectionActionBar(
+              showOverflow:
+                  widget.showConstraintError &&
+                  widget.constraint == ConstraintCase.actionRow,
               count: _selectedIds.length,
               totalBytes: _sumBytes(true),
               onDelete: _deleteSelected,

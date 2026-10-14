@@ -45,3 +45,23 @@ flutter emulators --launch <emulator-id>
 flutter devices
 flutter run -d <device-id>
 ```
+
+## H2 constraints
+
+Run emulator mode, then choose a case under H2 errors on the file manager:
+
+- Filename width: removes the width limit from a real file tile's name
+- Tile height: reduces the real grid cells to 64 dp
+- Selection bar: forces the selection summary and buttons onto one row
+
+Turn Show fix off to see the error, then on to restore the layout. These
+controls change the actual file-manager screen. You can change size and
+orientation while comparing. Off clears the H2 case.
+
+Use debug mode to see the overflow markers.
+
+Screenshots, explanations, and fixes: [constraints.md](docs/week04/constraints.md).
+
+## H1 responsive checks
+
+Results and fixes: [responsive-matrix.md](docs/week04/responsive-matrix.md).
