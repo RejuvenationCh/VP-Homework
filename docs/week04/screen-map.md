@@ -224,7 +224,7 @@ Google Drive access also depends on the permissions granted to the app. Prefer a
 
 ## Build order
 
-1. Week 5: add the main tabs and routes with mock data. Wire Settings and a mock Google Drive account page first.
+1. Add the main tabs and routes with mock data. Wire Settings and a mock Google Drive account page first.
 2. Add File preview, Review selected files, and Offload setup with mock states.
 3. Add real Android media access, scanning, and confirmed cleanup.
 4. Connect Google Drive and the destination picker, then upload one file while keeping the local copy.
