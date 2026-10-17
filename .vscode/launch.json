@@ -2,13 +2,13 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Media Cleaner · Normal",
+      "name": "Game Backlog · Normal",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart"
     },
     {
-      "name": "Media Cleaner · Week 4 emulator",
+      "name": "Game Backlog · Week 4 emulator",
       "request": "launch",
       "type": "dart",
       "program": "lib/main_emulator.dart"

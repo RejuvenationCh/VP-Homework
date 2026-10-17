@@ -4,11 +4,8 @@ import '../../../dev/constraint_scenario.dart';
 
 import '../data/mock_media.dart';
 import '../models/media_item.dart';
-import 'widgets/category_filter_chips.dart';
-import 'widgets/media_tile.dart';
-import 'widgets/media_empty_state.dart';
 import 'widgets/selection_action_bar.dart';
-import 'widgets/storage_summary_header.dart';
+import 'widgets/media_files_body.dart';
 
 class MediaCleanerScreen extends StatefulWidget {
   final List<MediaItem>? items;
@@ -44,16 +41,25 @@ class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
   @override
   void initState() {
     super.initState();
-    _items = List.of(widget.items ?? mockMedia);
+    final providedItems = widget.items;
+    if (providedItems == null) {
+      _items = List.of(mockMedia);
+    } else {
+      _items = List.of(providedItems);
+    }
     _filter = widget.initialCategory;
     if (widget.constraint == ConstraintCase.actionRow && _items.isNotEmpty) {
       _selectedIds.add(_items.first.id);
     }
-    _usedBytes =
-        widget.usedBytes ??
-        mockUsedBytes -
-            mockMedia.fold<int>(0, (sum, item) => sum + item.sizeBytes) +
-            _sumBytes(false);
+    final providedUsedBytes = widget.usedBytes;
+    if (providedUsedBytes == null) {
+      _usedBytes =
+          mockUsedBytes -
+          mockMedia.fold<int>(0, (sum, item) => sum + item.sizeBytes) +
+          _sumBytes(false);
+    } else {
+      _usedBytes = providedUsedBytes;
+    }
   }
 
   // filter first, then sort (size = biggest first, date = newest first)
@@ -129,7 +135,22 @@ class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
     final visible = _visibleItems;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Media Cleaner'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Game Backlog',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              'Media files (previous)',
+              style: Theme.of(context).textTheme.labelSmall,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: _sortBySize ? 'Sorted by size' : 'Sorted by date',
@@ -138,101 +159,25 @@ class _MediaCleanerScreenState extends State<MediaCleanerScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 700;
-            final header = Column(
-              children: [
-                StorageSummaryHeader(
-                  usedBytes: _usedBytes,
-                  totalBytes: mockTotalBytes,
-                  mediaBytes: _sumBytes(false),
-                ),
-                CategoryFilterChips(
-                  selected: _filter,
-                  onSelected: _setFilter,
-                  wrap: wide,
-                ),
-              ],
-            );
-            final files = CustomScrollView(
-              key: const Key('files-scroll'),
-              slivers: [
-                if (!wide) SliverToBoxAdapter(child: header),
-                if (visible.isEmpty)
-                  SliverToBoxAdapter(
-                    child: MediaEmptyState(
-                      message: _items.isEmpty
-                          ? 'No media left. All demo files have been removed.'
-                          : 'No files in this category.',
-                      actionLabel: _items.isEmpty
-                          ? 'Restore demo files'
-                          : 'Show all files',
-                      onAction: () => setState(() {
-                        _filter = null;
-                        if (_items.isEmpty) {
-                          _items.addAll(mockMedia);
-                          _usedBytes = mockUsedBytes;
-                          widget.onRestore?.call();
-                        }
-                      }),
-                    ),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.all(16),
-                    sliver: SliverLayoutBuilder(
-                      builder: (context, constraints) => SliverGrid.builder(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: constraints.crossAxisExtent < 360
-                              ? 2
-                              : constraints.crossAxisExtent < 700
-                              ? 3
-                              : 4,
-                          mainAxisExtent:
-                              widget.showConstraintError &&
-                                  widget.constraint == ConstraintCase.shortTile
-                              ? 64
-                              : 160 +
-                                    48 *
-                                        (MediaQuery.textScalerOf(context)
-                                                .scale(1) -
-                                            1),
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                        ),
-                        itemCount: visible.length,
-                        itemBuilder: (context, i) => MediaTile(
-                          item: visible[i],
-                          showNameOverflow:
-                              i == 0 &&
-                              widget.showConstraintError &&
-                              widget.constraint == ConstraintCase.longName,
-                          isSelected: _selectedIds.contains(visible[i].id),
-                          onTap: () => _toggleSelect(visible[i].id),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            );
-            return wide
-                ? Row(
-                    key: const Key('files-wide-layout'),
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 250,
-                        child: SingleChildScrollView(child: header),
-                      ),
-                      const VerticalDivider(width: 1),
-                      Expanded(child: files),
-                    ],
-                  )
-                : files;
-          },
-        ),
+      body: MediaFilesBody(
+        visible: visible,
+        usedBytes: _usedBytes,
+        mediaBytes: _sumBytes(false),
+        filter: _filter,
+        isEmpty: _items.isEmpty,
+        selectedIds: _selectedIds,
+        onFilter: _setFilter,
+        onSelect: _toggleSelect,
+        constraint: widget.constraint,
+        showConstraintError: widget.showConstraintError,
+        onRestore: () => setState(() {
+          _filter = null;
+          if (_items.isEmpty) {
+            _items.addAll(mockMedia);
+            _usedBytes = mockUsedBytes;
+            widget.onRestore?.call();
+          }
+        }),
       ),
       bottomNavigationBar: _selectedIds.isEmpty
           ? null

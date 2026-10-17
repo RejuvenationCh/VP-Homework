@@ -21,14 +21,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final providedHome = home;
+    Widget firstScreen;
+    if (providedHome == null) {
+      firstScreen = const StorageOverviewScreen();
+    } else {
+      firstScreen = providedHome;
+    }
     return MaterialApp(
-      title: 'Media Cleaner',
+      title: 'Game Backlog',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       darkTheme: buildAppTheme(Brightness.dark),
       themeMode: themeMode,
       builder: builder,
-      home: home ?? const StorageOverviewScreen(),
+      home: firstScreen,
     );
   }
 }

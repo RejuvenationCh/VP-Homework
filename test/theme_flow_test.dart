@@ -11,6 +11,8 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const MyApp());
+    expect(find.text('Game Backlog'), findsOneWidget);
+    expect(find.text('Media overview (previous)'), findsOneWidget);
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.theme!.colorScheme.primary, const Color(0xFF3555B8));
@@ -21,6 +23,8 @@ void main() {
     await tester.ensureVisible(folder);
     await tester.tap(folder);
     await tester.pumpAndSettle();
+    expect(find.text('Game Backlog').hitTestable(), findsOneWidget);
+    expect(find.text('Media files (previous)'), findsOneWidget);
     expect(find.text('C0012.MP4'), findsOneWidget);
     expect(find.text('Rec_0921.mp4'), findsNothing);
 

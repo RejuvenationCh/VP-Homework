@@ -5,25 +5,10 @@ import '../features/media_cleaner/presentation/storage_overview_screen.dart';
 import '../main.dart';
 import 'responsive_fixtures.dart';
 import 'constraint_scenario.dart';
-
-// Adapted from W4/lab04: sized frame + MediaQuery + FittedBox.scaleDown.
-enum DemoDevice {
-  small('Small phone', Size(320, 568)),
-  large('Large phone', Size(430, 932)),
-  tablet('Tablet', Size(800, 1280));
-
-  const DemoDevice(this.label, this.size);
-  final String label;
-  final Size size;
-}
-
-enum _Screen {
-  overview('Storage overview'),
-  files('File manager');
-
-  const _Screen(this.label);
-  final String label;
-}
+import 'demo_device.dart';
+import 'device_stage.dart';
+import 'harness_scenario_controls.dart';
+import 'harness_device_controls.dart';
 
 class DeviceHarness extends StatefulWidget {
   const DeviceHarness({super.key});
@@ -35,7 +20,7 @@ class DeviceHarness extends StatefulWidget {
 class _DeviceHarnessState extends State<DeviceHarness> {
   DemoDevice _device = DemoDevice.small;
   DemoData _data = DemoData.normal;
-  _Screen _page = _Screen.overview;
+  DemoScreen _page = DemoScreen.overview;
   bool _landscape = false;
   bool _keyboard = false;
   bool _dark = false;
@@ -48,7 +33,7 @@ class _DeviceHarnessState extends State<DeviceHarness> {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'Media Cleaner · Week 4 emulator',
+    title: 'Game Backlog · Week 4 emulator',
     debugShowCheckedModeBanner: false,
     theme: ThemeData(
       useMaterial3: true,
@@ -60,7 +45,30 @@ class _DeviceHarnessState extends State<DeviceHarness> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final panel = _panel(context);
-              final stage = _stage(context);
+              final stage = DeviceStage(
+                size: _screen,
+                landscape: _landscape,
+                showKeyboard: _keyboard,
+                showInsets: _insets,
+                appBuilder: (media) => MyApp(
+                  key: ValueKey((_data, _page, _constraint, _revision)),
+                  themeMode: _dark ? ThemeMode.dark : ThemeMode.light,
+                  // Override after MaterialApp creates its MediaQuery so routes
+                  // and Scaffold both receive the simulated constraints.
+                  builder: (context, child) =>
+                      MediaQuery(data: media, child: child!),
+                  home: switch (_page) {
+                    DemoScreen.overview => StorageOverviewScreen(
+                      items: _data.items,
+                    ),
+                    DemoScreen.files => MediaCleanerScreen(
+                      items: _data.items,
+                      constraint: _constraint,
+                      showConstraintError: !_showFix,
+                    ),
+                  },
+                ),
+              );
               return constraints.maxWidth >= 760
                   ? Row(
                       children: [
@@ -84,116 +92,53 @@ class _DeviceHarnessState extends State<DeviceHarness> {
   );
 
   Widget _panel(BuildContext context) {
-    Widget group(String title, List<Widget> controls) => Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: controls),
-        ],
-      ),
-    );
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          'Media Cleaner · Week 4',
+          'Game Backlog · Week 4',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
         const Text(
-          'Choose a screen. H2 deliberately shows overflow errors when Show fix is off.',
+          'Previous Media Cleaner screens. H2 deliberately shows overflow errors when Show fix is off.',
         ),
         const SizedBox(height: 16),
-        group('Screen', [
-          for (final screen in _Screen.values)
-            ChoiceChip(
-              label: Text(screen.label),
-              selected: _page == screen,
-              onSelected: (_) => setState(() {
-                _page = screen;
-                _constraint = null;
-                _showFix = true;
-              }),
-            ),
-        ]),
-        group('H2 errors on the file manager', [
-          ChoiceChip(
-            label: const Text('Off'),
-            selected: _constraint == null,
-            onSelected: (_) => setState(() {
-              _constraint = null;
-              _showFix = true;
-            }),
-          ),
-          for (final fault in ConstraintCase.values)
-            ChoiceChip(
-              label: Text(fault.label),
-              selected: _constraint == fault,
-              onSelected: (_) => setState(() {
-                _page = _Screen.files;
-                _constraint = fault;
-                _showFix = true;
-                _data = fault == ConstraintCase.longName
-                    ? DemoData.longName
-                    : DemoData.normal;
-              }),
-            ),
-        ]),
-        if (_constraint != null)
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Show fix'),
-            value: _showFix,
-            onChanged: (value) => setState(() => _showFix = value),
-          ),
-        group('Device', [
-          for (final device in DemoDevice.values)
-            ChoiceChip(
-              label: Text(device.label),
-              selected: _device == device,
-              onSelected: (_) => setState(() => _device = device),
-            ),
-        ]),
-        group('Orientation', [
-          ChoiceChip(
-            label: const Text('Portrait'),
-            selected: !_landscape,
-            onSelected: (_) => setState(() => _landscape = false),
-          ),
-          ChoiceChip(
-            label: const Text('Landscape'),
-            selected: _landscape,
-            onSelected: (_) => setState(() => _landscape = true),
-          ),
-        ]),
-        group('Data', [
-          for (final data in DemoData.values)
-            ChoiceChip(
-              label: Text(data.label),
-              selected: _data == data,
-              onSelected: (_) => setState(() => _data = data),
-            ),
-        ]),
-        group('Conditions', [
-          FilterChip(
-            label: const Text('Keyboard open'),
-            selected: _keyboard,
-            onSelected: (value) => setState(() => _keyboard = value),
-          ),
-          FilterChip(
-            label: const Text('Dark mode'),
-            selected: _dark,
-            onSelected: (value) => setState(() => _dark = value),
-          ),
-          FilterChip(
-            label: const Text('Notch + gesture bar'),
-            selected: _insets,
-            onSelected: (value) => setState(() => _insets = value),
-          ),
-        ]),
+        HarnessScenarioControls(
+          page: _page,
+          constraint: _constraint,
+          showFix: _showFix,
+          onScreen: (screen) => setState(() {
+            _page = screen;
+            _constraint = null;
+            _showFix = true;
+          }),
+          onConstraint: (fault) => setState(() {
+            _constraint = fault;
+            _showFix = true;
+            if (fault != null) {
+              _page = DemoScreen.files;
+              _data = fault == ConstraintCase.longName
+                  ? DemoData.longName
+                  : DemoData.normal;
+            }
+          }),
+          onFix: (value) => setState(() => _showFix = value),
+        ),
+        HarnessDeviceControls(
+          device: _device,
+          data: _data,
+          landscape: _landscape,
+          keyboard: _keyboard,
+          dark: _dark,
+          insets: _insets,
+          onDevice: (value) => setState(() => _device = value),
+          onData: (value) => setState(() => _data = value),
+          onLandscape: (value) => setState(() => _landscape = value),
+          onKeyboard: (value) => setState(() => _keyboard = value),
+          onDark: (value) => setState(() => _dark = value),
+          onInsets: (value) => setState(() => _insets = value),
+        ),
         Text('Screen: ${_screen.width.toInt()} × ${_screen.height.toInt()} dp'),
         const SizedBox(height: 8),
         const Text(
@@ -205,128 +150,6 @@ class _DeviceHarnessState extends State<DeviceHarness> {
           label: const Text('Reset demo'),
         ),
       ],
-    );
-  }
-
-  Widget _stage(BuildContext context) {
-    final size = _screen;
-    final keyboard = _keyboard ? (_landscape ? 180.0 : 260.0) : 0.0;
-    final padding = !_insets
-        ? EdgeInsets.zero
-        : _landscape
-        ? const EdgeInsets.only(left: 32, bottom: 20)
-        : const EdgeInsets.only(top: 32, bottom: 20);
-    final safe = keyboard > 0 ? padding.copyWith(bottom: 0) : padding;
-    final media = MediaQuery.of(context).copyWith(
-      size: size,
-      devicePixelRatio: 1,
-      padding: safe,
-      viewPadding: padding,
-      viewInsets: EdgeInsets.only(bottom: keyboard),
-    );
-    return ColoredBox(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1B1D1F),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: SizedBox.fromSize(
-                  size: size,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: MyApp(
-                          key: ValueKey((_data, _page, _constraint, _revision)),
-                          themeMode: _dark ? ThemeMode.dark : ThemeMode.light,
-                          // Override after MaterialApp creates its MediaQuery so routes
-                          // and Scaffold both receive the simulated constraints.
-                          builder: (context, child) =>
-                              MediaQuery(data: media, child: child!),
-                          home: switch (_page) {
-                            _Screen.overview => StorageOverviewScreen(
-                              items: _data.items,
-                            ),
-                            _Screen.files => MediaCleanerScreen(
-                              items: _data.items,
-                              constraint: _constraint,
-                              showConstraintError: !_showFix,
-                            ),
-                          },
-                        ),
-                      ),
-                      if (padding.top > 0)
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          height: padding.top,
-                          child: const IgnorePointer(
-                            child: ColoredBox(
-                              color: Color(0xFF1B1D1F),
-                              child: Center(
-                                child: Text(
-                                  '9:41',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      if (padding.left > 0)
-                        Positioned(
-                          top: 0,
-                          bottom: 0,
-                          left: 0,
-                          width: padding.left,
-                          child: const IgnorePointer(
-                            child: ColoredBox(color: Color(0xFF1B1D1F)),
-                          ),
-                        ),
-                      if (safe.bottom > 0)
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          height: safe.bottom,
-                          child: const IgnorePointer(
-                            child: ColoredBox(color: Color(0xFF1B1D1F)),
-                          ),
-                        ),
-                      if (keyboard > 0)
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          height: keyboard,
-                          child: const IgnorePointer(
-                            child: ColoredBox(
-                              color: Color(0xFF2B2F33),
-                              child: Center(
-                                child: Text(
-                                  'Simulated keyboard',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

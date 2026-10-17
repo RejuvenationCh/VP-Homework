@@ -1,11 +1,11 @@
 {
-  "name": "Media Cleaner",
-  "short_name": "Media Cleaner",
+  "name": "Game Backlog",
+  "short_name": "Game Backlog",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#3555B8",
-  "description": "Media Cleaner coursework demo.",
+  "description": "Game Backlog coursework app. Previous Media Cleaner screens remain during the transition.",
   "prefer_related_applications": false,
   "icons": [
     {
