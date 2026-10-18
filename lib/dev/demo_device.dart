@@ -11,6 +11,8 @@ enum DemoDevice {
 }
 
 enum DemoScreen {
+  library('Library'),
+  retry('Retry demo'),
   overview('Storage overview'),
   files('File manager');
 

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_media.dart';
-import '../models/media_item.dart';
+import '../../features/media_cleaner/data/mock_media.dart';
+import '../../features/media_cleaner/models/media_item.dart';
 import 'media_cleaner_screen.dart';
-import 'widgets/storage_folder.dart';
-import 'widgets/storage_map_panel.dart';
-import 'widgets/storage_folders_panel.dart';
+import '../../features/media_cleaner/presentation/widgets/storage_folder.dart';
+import '../../features/media_cleaner/presentation/widgets/storage_map_panel.dart';
+import '../../features/media_cleaner/presentation/widgets/storage_folders_panel.dart';
 
 class StorageOverviewScreen extends StatefulWidget {
   const StorageOverviewScreen({super.key, this.items});

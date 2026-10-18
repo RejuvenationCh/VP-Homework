@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_cleaner/main.dart';
+import 'package:media_cleaner/dev/media_demos/storage_overview_screen.dart';
 
 void main() {
   testWidgets('folder navigation keeps cleanup totals and the shared theme', (
@@ -10,8 +11,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const MyApp());
-    await tester.tap(find.byTooltip('Previous media screens'));
+    await tester.pumpWidget(const MyApp(home: StorageOverviewScreen()));
     await tester.pumpAndSettle();
     expect(find.text('Game Backlog'), findsOneWidget);
     expect(find.text('Media overview (previous)'), findsOneWidget);

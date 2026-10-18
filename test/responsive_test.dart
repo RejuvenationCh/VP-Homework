@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_cleaner/main.dart';
 import 'package:media_cleaner/dev/responsive_fixtures.dart';
-import 'package:media_cleaner/features/media_cleaner/presentation/storage_overview_screen.dart';
-import 'package:media_cleaner/features/media_cleaner/presentation/media_cleaner_screen.dart';
+import 'package:media_cleaner/dev/media_demos/storage_overview_screen.dart';
+import 'package:media_cleaner/dev/media_demos/media_cleaner_screen.dart';
 
 void main() {
   testWidgets('small phone can select a file without overflowing', (
@@ -13,8 +13,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const MyApp());
-    await tester.tap(find.byTooltip('Previous media screens'));
+    await tester.pumpWidget(const MyApp(home: StorageOverviewScreen()));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Review large files'), 250);
     await tester.ensureVisible(find.text('Review large files'));

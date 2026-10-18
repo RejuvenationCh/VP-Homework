@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../dev/constraint_scenario.dart';
+import '../constraint_scenario.dart';
 
-import '../data/mock_media.dart';
-import '../models/media_item.dart';
-import 'widgets/selection_action_bar.dart';
-import 'widgets/media_files_body.dart';
+import '../../features/media_cleaner/data/mock_media.dart';
+import '../../features/media_cleaner/models/media_item.dart';
+import '../../features/media_cleaner/presentation/widgets/selection_action_bar.dart';
+import '../../features/media_cleaner/presentation/widgets/media_files_body.dart';
 
 class MediaCleanerScreen extends StatefulWidget {
   final List<MediaItem>? items;

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../features/media_cleaner/presentation/media_cleaner_screen.dart';
-import '../features/media_cleaner/presentation/storage_overview_screen.dart';
+import 'media_demos/media_cleaner_screen.dart';
+import 'media_demos/storage_overview_screen.dart';
 import '../main.dart';
+import '../features/game_library/presentation/game_library_screen.dart';
 import 'responsive_fixtures.dart';
 import 'constraint_scenario.dart';
 import 'demo_device.dart';
 import 'device_stage.dart';
+import 'library_retry_demo.dart';
 import 'harness_scenario_controls.dart';
 import 'harness_device_controls.dart';
 
@@ -20,7 +22,7 @@ class DeviceHarness extends StatefulWidget {
 class _DeviceHarnessState extends State<DeviceHarness> {
   DemoDevice _device = DemoDevice.small;
   DemoData _data = DemoData.normal;
-  DemoScreen _page = DemoScreen.overview;
+  DemoScreen _page = DemoScreen.library;
   bool _landscape = false;
   bool _keyboard = false;
   bool _dark = false;
@@ -58,6 +60,8 @@ class _DeviceHarnessState extends State<DeviceHarness> {
                   builder: (context, child) =>
                       MediaQuery(data: media, child: child!),
                   home: switch (_page) {
+                    DemoScreen.library => const GameLibraryScreen(),
+                    DemoScreen.retry => const LibraryRetryDemo(),
                     DemoScreen.overview => StorageOverviewScreen(
                       items: _data.items,
                     ),
@@ -101,7 +105,7 @@ class _DeviceHarnessState extends State<DeviceHarness> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Previous Media Cleaner screens. H2 deliberately shows overflow errors when Show fix is off.',
+          'H2 uses the media demos. Data scenarios apply to media demos.',
         ),
         const SizedBox(height: 16),
         HarnessScenarioControls(

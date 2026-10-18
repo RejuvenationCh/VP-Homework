@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:media_cleaner/dev/constraint_scenario.dart';
 import 'package:media_cleaner/dev/demo_device.dart';
 import 'package:media_cleaner/dev/device_harness.dart';
-import 'package:media_cleaner/features/media_cleaner/presentation/media_cleaner_screen.dart';
+import 'package:media_cleaner/dev/media_demos/media_cleaner_screen.dart';
 
 import 'support/harness_controls.dart';
 

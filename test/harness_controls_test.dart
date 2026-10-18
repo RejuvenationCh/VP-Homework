@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_cleaner/dev/device_harness.dart';
-import 'package:media_cleaner/features/media_cleaner/presentation/media_cleaner_screen.dart';
+import 'package:media_cleaner/dev/media_demos/media_cleaner_screen.dart';
 
 import 'support/harness_controls.dart';
 
@@ -14,6 +14,16 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const DeviceHarness());
+    await tester.pumpAndSettle();
+    expect(find.text('PAYDAY 2'), findsOneWidget);
+    expect(
+      tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Library'))
+          .selected,
+      isTrue,
+    );
+    await tester.tap(find.text('Storage overview'));
+    await tester.pumpAndSettle();
     expect(
       tester
           .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Small phone'))
@@ -79,6 +89,45 @@ void main() {
     await tester.pumpAndSettle();
     expect(MediaQuery.sizeOf(inner), const Size(1280, 800));
     expect(MediaQuery.viewInsetsOf(inner).bottom, 180);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('retry demo fails once, recovers, and resets', (tester) async {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(const DeviceHarness());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Retry demo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Could not load games'), findsOneWidget);
+    expect(find.text('No games yet'), findsNothing);
+    expect(find.text('PAYDAY 2'), findsNothing);
+    await revealPanel(tester, find.text('Dark mode'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dark mode'));
+    await tester.pumpAndSettle();
+    expect(find.text('Could not load games'), findsOneWidget);
+    expect(
+      Theme.of(tester.element(find.text('Could not load games'))).brightness,
+      Brightness.dark,
+    );
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(find.text('PAYDAY 2'), findsOneWidget);
+    expect(find.text('Could not load games'), findsNothing);
+    await revealPanel(tester, find.text('Reset demo'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reset demo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Could not load games'), findsOneWidget);
+    await revealPanel(tester, find.text('Library'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Library'));
+    await tester.pumpAndSettle();
+    expect(find.text('PAYDAY 2'), findsOneWidget);
+    expect(find.text('Could not load games'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }
