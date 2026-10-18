@@ -14,6 +14,8 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const MyApp());
+    await tester.tap(find.byTooltip('Previous media screens'));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Review large files'), 250);
     await tester.ensureVisible(find.text('Review large files'));
     await tester.pumpAndSettle();

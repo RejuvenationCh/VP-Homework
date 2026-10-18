@@ -11,6 +11,8 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const MyApp());
+    await tester.tap(find.byTooltip('Previous media screens'));
+    await tester.pumpAndSettle();
     expect(find.text('Game Backlog'), findsOneWidget);
     expect(find.text('Media overview (previous)'), findsOneWidget);
 

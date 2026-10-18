@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
-import 'features/media_cleaner/presentation/storage_overview_screen.dart';
+import 'features/game_library/presentation/game_library_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
     final providedHome = home;
     Widget firstScreen;
     if (providedHome == null) {
-      firstScreen = const StorageOverviewScreen();
+      firstScreen = const GameLibraryScreen();
     } else {
       firstScreen = providedHome;
     }
