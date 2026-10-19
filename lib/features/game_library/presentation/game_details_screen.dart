@@ -4,6 +4,7 @@ import '../models/game.dart';
 import 'game_artwork.dart';
 import 'game_details_actions.dart';
 import 'game_details_info_card.dart';
+import 'game_achievements_screen.dart';
 import 'game_notes_screen.dart';
 
 class GameDetailsScreen extends StatefulWidget {
@@ -82,6 +83,7 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
                 onChanged: _saveGame,
                 onEditNotes: _editNotes,
               ),
+              if (_game.isSample) GameAchievementsEntry(game: _game),
             ],
           ),
         ),
