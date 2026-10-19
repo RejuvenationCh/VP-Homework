@@ -7,6 +7,7 @@ Future<List<Game>> loadSampleGames() async {
 // Game names picked by the user, statuses are samples
 const sampleGames = [
   Game(
+    isSample: true,
     id: 'sample-payday-2',
     name: 'PAYDAY 2',
     primaryGenre: 'Shooter',
@@ -14,6 +15,7 @@ const sampleGames = [
     status: GameStatus.backlog,
   ),
   Game(
+    isSample: true,
     id: 'sample-terraria',
     name: 'Terraria',
     primaryGenre: 'Adventure',
@@ -21,6 +23,7 @@ const sampleGames = [
     status: GameStatus.playing,
   ),
   Game(
+    isSample: true,
     id: 'sample-counter-strike-2',
     name: 'Counter-Strike 2',
     primaryGenre: 'Shooter',
@@ -28,6 +31,7 @@ const sampleGames = [
     status: GameStatus.finished,
   ),
   Game(
+    isSample: true,
     id: 'sample-forza-horizon-4',
     name: 'Forza Horizon 4',
     primaryGenre: 'Racing',
@@ -35,6 +39,7 @@ const sampleGames = [
     status: GameStatus.dropped,
   ),
   Game(
+    isSample: true,
     id: 'sample-forza-horizon-5',
     name: 'Forza Horizon 5',
     primaryGenre: 'Racing',

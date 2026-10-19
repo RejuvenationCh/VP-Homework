@@ -15,6 +15,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const DeviceHarness());
     await tester.pumpAndSettle();
+    expect(find.text('No games yet'), findsOneWidget);
+    await tester.tap(find.text('Load sample games'));
+    await tester.pumpAndSettle();
     expect(find.text('PAYDAY 2'), findsOneWidget);
     expect(
       tester
@@ -126,7 +129,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Library'));
     await tester.pumpAndSettle();
-    expect(find.text('PAYDAY 2'), findsOneWidget);
+    expect(find.text('No games yet'), findsOneWidget);
+    expect(find.text('PAYDAY 2'), findsNothing);
     expect(find.text('Could not load games'), findsNothing);
     expect(tester.takeException(), isNull);
   });

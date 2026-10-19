@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../data/sample_games.dart';
 import '../models/game.dart';
+import 'add_game_dialog.dart';
 
 class GameLibraryScreen extends StatefulWidget {
-  const GameLibraryScreen({super.key, this.loadGames = loadSampleGames});
+  const GameLibraryScreen({super.key, this.loadGames});
 
-  final Future<List<Game>> Function() loadGames;
+  final Future<List<Game>> Function()? loadGames;
 
   @override
   State<GameLibraryScreen> createState() => _GameLibraryScreenState();
@@ -14,24 +15,66 @@ class GameLibraryScreen extends StatefulWidget {
 
 class _GameLibraryScreenState extends State<GameLibraryScreen> {
   late Future<List<Game>> _games;
+  int _nextManualId = 0;
+
+  Future<List<Game>> _loadGames() {
+    final loader = widget.loadGames;
+    if (loader == null) {
+      return Future.value(<Game>[]);
+    } else {
+      return Future.sync(loader).then((games) => List<Game>.of(games));
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _games = Future.sync(widget.loadGames);
+    _games = _loadGames();
   }
 
   @override
   void didUpdateWidget(GameLibraryScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.loadGames != widget.loadGames) {
-      _games = Future.sync(widget.loadGames);
+      _games = _loadGames();
     }
   }
 
   void _retry() {
     setState(() {
-      _games = Future.sync(widget.loadGames);
+      _games = _loadGames();
+    });
+  }
+
+  Future<void> _addGame(List<Game> games) async {
+    final activeLoad = _games;
+    final title = await showDialog<String>(
+      context: context,
+      builder: (context) => const AddGameDialog(),
+    );
+    if (!mounted || activeLoad != _games || title == null) {
+      return;
+    }
+    setState(() {
+      games.add(
+        Game(
+          id: 'manual-${_nextManualId++}',
+          name: title,
+          primaryGenre: 'Unsorted',
+          platform: 'Unspecified',
+          status: GameStatus.backlog,
+        ),
+      );
+    });
+  }
+
+  void _loadSamples(List<Game> games) {
+    setState(() {
+      for (final sample in sampleGames) {
+        if (!games.any((game) => game.id == sample.id)) {
+          games.add(sample);
+        }
+      }
     });
   }
 
@@ -71,23 +114,48 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
       );
     }
 
-    final games = snapshot.data;
-    if (games == null || games.isEmpty) {
-      return const Center(child: Text('No games yet'));
+    final loadedGames = snapshot.data;
+    List<Game> games;
+    if (loadedGames == null) {
+      games = [];
+    } else {
+      games = loadedGames;
     }
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text('Sample library', style: Theme.of(context).textTheme.titleLarge),
+        Text('Library', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            FilledButton(
+              onPressed: () => _addGame(games),
+              child: const Text('Add game'),
+            ),
+            TextButton(
+              onPressed: () => _loadSamples(games),
+              child: const Text('Load sample games'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (games.isEmpty) const Text('No games yet'),
         for (final game in games)
           ListTile(
             title: Text(game.name),
-            subtitle: Text(
-              'Genre: ${game.primaryGenre}\n'
-              'Platform: ${game.platform}\n'
-              'Personal status: ${game.status.label}',
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (game.isSample) const Text('Sample'),
+                Text(
+                  'Genre: ${game.primaryGenre}\n'
+                  'Platform: ${game.platform}\n'
+                  'Personal status: ${game.status.label}',
+                ),
+              ],
             ),
           ),
       ],
