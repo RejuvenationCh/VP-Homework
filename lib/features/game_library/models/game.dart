@@ -20,6 +20,7 @@ class Game {
     this.artworkUrl,
     this.playtimeMinutes,
     this.rating,
+    this.notes = '',
   });
 
   // Game info is separate from the personal status below
@@ -31,11 +32,16 @@ class Game {
   final String? artworkUrl;
   final int? playtimeMinutes;
   final int? rating;
+  final String notes;
 
   // User chooses the status, not based on playtime or achievements
   final GameStatus status;
 
-  Game copyWith({required GameStatus status, required int? rating}) {
+  Game copyWith({
+    required GameStatus status,
+    required int? rating,
+    required String notes,
+  }) {
     return Game(
       id: id,
       name: name,
@@ -46,6 +52,7 @@ class Game {
       artworkUrl: artworkUrl,
       playtimeMinutes: playtimeMinutes,
       rating: rating,
+      notes: notes,
     );
   }
 }

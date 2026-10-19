@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/game.dart';
 import 'game_artwork.dart';
+import 'game_notes_screen.dart';
 import 'game_rating_control.dart';
 
 class GameDetailsScreen extends StatefulWidget {
@@ -10,11 +11,13 @@ class GameDetailsScreen extends StatefulWidget {
     required this.game,
     required this.onStatusChanged,
     required this.onRatingChanged,
+    required this.onNotesChanged,
   });
 
   final Game game;
   final ValueChanged<GameStatus> onStatusChanged;
   final ValueChanged<int?> onRatingChanged;
+  final ValueChanged<String> onNotesChanged;
 
   @override
   State<GameDetailsScreen> createState() => _GameDetailsScreenState();
@@ -23,12 +26,14 @@ class GameDetailsScreen extends StatefulWidget {
 class _GameDetailsScreenState extends State<GameDetailsScreen> {
   late GameStatus _status;
   int? _rating;
+  late String _notes;
 
   @override
   void initState() {
     super.initState();
     _status = widget.game.status;
     _rating = widget.game.rating;
+    _notes = widget.game.notes;
   }
 
   @override
@@ -76,6 +81,7 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
                         rating: _rating,
                         onChanged: _updateRating,
                       ),
+                      GameNotesEntry(notes: _notes, onTap: _editNotes),
                     ],
                   ),
                 ),
@@ -147,5 +153,19 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
   void _updateRating(int? rating) {
     setState(() => _rating = rating);
     widget.onRatingChanged(rating);
+  }
+
+  Future<void> _editNotes() async {
+    final notes = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (context) => GameNotesScreen(initialNotes: _notes),
+      ),
+    );
+    if (!mounted || notes == null) {
+      return;
+    } else {
+      setState(() => _notes = notes);
+      widget.onNotesChanged(notes);
+    }
   }
 }

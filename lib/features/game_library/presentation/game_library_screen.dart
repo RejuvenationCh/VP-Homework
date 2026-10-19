@@ -85,34 +85,44 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
       MaterialPageRoute<void>(
         builder: (context) => GameDetailsScreen(
           game: game,
-          onStatusChanged: (status) => _setGameStatus(games, game.id, status),
-          onRatingChanged: (rating) => _setGameRating(games, game.id, rating),
+          onStatusChanged: (status) => _updateGame(
+            games,
+            game.id,
+            (current) => current.copyWith(
+              status: status,
+              rating: current.rating,
+              notes: current.notes,
+            ),
+          ),
+          onRatingChanged: (rating) => _updateGame(
+            games,
+            game.id,
+            (current) => current.copyWith(
+              status: current.status,
+              rating: rating,
+              notes: current.notes,
+            ),
+          ),
+          onNotesChanged: (notes) => _updateGame(
+            games,
+            game.id,
+            (current) => current.copyWith(
+              status: current.status,
+              rating: current.rating,
+              notes: notes,
+            ),
+          ),
         ),
       ),
     );
   }
 
-  void _setGameStatus(List<Game> games, String gameId, GameStatus status) {
-    final gameIndex = games.indexWhere((game) => game.id == gameId);
+  void _updateGame(List<Game> games, String id, Game Function(Game) update) {
+    final gameIndex = games.indexWhere((game) => game.id == id);
     if (gameIndex < 0) {
       return;
     } else {
-      setState(() {
-        final game = games[gameIndex];
-        games[gameIndex] = game.copyWith(status: status, rating: game.rating);
-      });
-    }
-  }
-
-  void _setGameRating(List<Game> games, String gameId, int? rating) {
-    final gameIndex = games.indexWhere((game) => game.id == gameId);
-    if (gameIndex < 0) {
-      return;
-    } else {
-      setState(() {
-        final game = games[gameIndex];
-        games[gameIndex] = game.copyWith(status: game.status, rating: rating);
-      });
+      setState(() => games[gameIndex] = update(games[gameIndex]));
     }
   }
 
