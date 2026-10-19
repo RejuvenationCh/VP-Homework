@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/achievement.dart';
 import 'achievement_artwork.dart';
+import 'achievement_progress_widget.dart';
 
 class AchievementTile extends StatelessWidget {
   const AchievementTile({super.key, required this.achievement});
@@ -20,10 +21,7 @@ class AchievementTile extends StatelessWidget {
           children: [
             if (achievement.description.isNotEmpty)
               Text(achievement.description),
-            Text(
-              achievement.progress.label,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
+            AchievementProgressWidget(achievement: achievement),
           ],
         ),
       ),

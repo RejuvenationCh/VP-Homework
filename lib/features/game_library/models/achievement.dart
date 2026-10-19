@@ -14,6 +14,8 @@ class Achievement {
     required this.name,
     this.description = '',
     this.artworkUrl,
+    this.currentProgress,
+    this.totalProgress,
     required this.progress,
   });
 
@@ -21,5 +23,7 @@ class Achievement {
   final String name;
   final String description;
   final String? artworkUrl;
+  final int? currentProgress;
+  final int? totalProgress;
   final AchievementProgress progress;
 }

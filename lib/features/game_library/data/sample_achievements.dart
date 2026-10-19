@@ -6,12 +6,16 @@ const _sampleAchievements = [
     id: 'first-session',
     name: 'First session',
     description: 'Complete a short play session.',
+    currentProgress: 1,
+    totalProgress: 1,
     progress: AchievementProgress.unlocked,
   ),
   Achievement(
     id: 'keep-exploring',
     name: 'Keep exploring',
     description: 'Discover more of the game.',
+    currentProgress: 2,
+    totalProgress: 5,
     progress: AchievementProgress.locked,
   ),
   Achievement(
