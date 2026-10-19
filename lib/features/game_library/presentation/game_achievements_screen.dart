@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/sample_achievements.dart';
 import '../models/achievement.dart';
 import '../models/game.dart';
-import 'achievement_tile.dart';
+import 'achievement_list.dart';
 
 class GameAchievementsEntry extends StatelessWidget {
   const GameAchievementsEntry({super.key, required this.game});
@@ -76,43 +76,15 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
               if (achievements == null || achievements.isEmpty) {
                 return _empty(context);
               } else {
-                return _achievementList(context, achievements);
+                return AchievementList(
+                  game: widget.game,
+                  achievements: achievements,
+                );
               }
             }
           },
         ),
       ),
-    );
-  }
-
-  Widget _achievementList(
-    BuildContext context,
-    List<Achievement> achievements,
-  ) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: achievements.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return _achievementHeader(context);
-        } else {
-          final achievement = achievements[index - 1];
-          return AchievementTile(achievement: achievement);
-        }
-      },
-    );
-  }
-
-  Widget _achievementHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(widget.game.name, style: Theme.of(context).textTheme.titleLarge),
-        const Align(
-          alignment: Alignment.centerLeft,
-          child: Chip(label: Text('Sample data')),
-        ),
-      ],
     );
   }
 
