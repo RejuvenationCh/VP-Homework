@@ -20,10 +20,10 @@ class GameLibraryScreen extends StatefulWidget {
   final String? genreRequest;
 
   @override
-  State<GameLibraryScreen> createState() => _GameLibraryScreenState();
+  State<GameLibraryScreen> createState() => GameLibraryScreenState();
 }
 
-class _GameLibraryScreenState extends State<GameLibraryScreen> {
+class GameLibraryScreenState extends State<GameLibraryScreen> {
   late Future<List<Game>> _games;
   List<Game>? _libraryGames;
   final _manualGameIds = ManualGameIds();
@@ -83,11 +83,8 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
     );
   }
 
-  Future<bool> _addToCurrentLibrary(Game game) async {
-    final updatedGames = List<Game>.of(_currentGames());
-    updatedGames.add(game);
-    return _saveAndPublish(updatedGames);
-  }
+  Future<bool> _addToCurrentLibrary(Game game) async =>
+      _saveAndPublish([..._currentGames(), game]);
 
   Future<void> _loadSamples(List<Game> games) async {
     final current = _currentGames();
@@ -97,44 +94,53 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
     }
   }
 
-  void _openGame(Game game) {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (context) => GameDetailsScreen(
-          game: game,
-          onGameChanged: _updateGame,
-          onEditGame: _editGame,
-          onRemoveGame: _removeGame,
-        ),
+  Future<void> _openGame(Game game) => Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (context) => GameDetailsScreen(
+        game: game,
+        onGameChanged: _updateGame,
+        onEditGame: _editGame,
+        onRemoveGame: _removeGame,
       ),
-    );
+    ),
+  );
+
+  Future<bool> openGame(Game game) async {
+    try {
+      await _games;
+      if (mounted) {
+        await _openGame(game);
+        return true;
+      } else {
+        return false;
+      }
+    } catch (_) {
+      if (mounted) _showSaveMessage('Could not load game details.');
+      return false;
+    }
   }
 
-  Future<Game?> _editGame(Game game) {
-    return Navigator.of(context).push<Game>(
-      MaterialPageRoute<Game>(
-        builder: (context) =>
-            GameFormScreen(game: game, isNew: false, onSave: _updateGame),
-      ),
-    );
-  }
+  Future<Game?> _editGame(Game game) => Navigator.of(context).push<Game>(
+    MaterialPageRoute<Game>(
+      builder: (context) =>
+          GameFormScreen(game: game, isNew: false, onSave: _updateGame),
+    ),
+  );
 
   Future<bool> _updateGame(Game updated) async {
     final updatedGames = withUpdatedGame(_currentGames(), updated);
     if (updatedGames == null) {
       return false;
-    } else {
-      return _saveAndPublish(updatedGames);
     }
+    return _saveAndPublish(updatedGames);
   }
 
   Future<bool> _removeGame(Game game) async {
     final updatedGames = withoutGame(_currentGames(), game);
     if (updatedGames == null) {
       return false;
-    } else {
-      return _saveAndPublish(updatedGames);
     }
+    return _saveAndPublish(updatedGames);
   }
 
   Future<bool> _saveAndPublish(List<Game> games) async {
@@ -171,11 +177,8 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
           .showSnackBar(SnackBar(content: Text(message)));
   List<Game> _currentGames() {
     final games = _libraryGames;
-    if (games == null) {
-      return <Game>[];
-    } else {
-      return games;
-    }
+    if (games == null) return <Game>[];
+    return games;
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/game_library_storage.dart';
 import '../models/game.dart';
 import 'genre_bubble_map.dart';
+import 'game_tile.dart';
 import 'overview_library_summary.dart';
 
 class GameOverviewScreen extends StatefulWidget {
@@ -11,11 +12,13 @@ class GameOverviewScreen extends StatefulWidget {
     required this.storage,
     required this.refreshKey,
     required this.onGenreSelected,
+    required this.onGameSelected,
   });
 
   final GameLibraryStorage storage;
   final int refreshKey;
   final ValueChanged<String> onGenreSelected;
+  final ValueChanged<Game> onGameSelected;
 
   @override
   State<GameOverviewScreen> createState() => _GameOverviewScreenState();
@@ -86,9 +89,7 @@ class _GameOverviewScreenState extends State<GameOverviewScreen> {
       slivers: [
         SliverPadding(
           padding: EdgeInsets.all(16),
-          sliver: SliverToBoxAdapter(
-            child: OverviewLibrarySummary(games: []),
-          ),
+          sliver: SliverToBoxAdapter(child: OverviewLibrarySummary(games: [])),
         ),
         SliverFillRemaining(
           hasScrollBody: false,
@@ -133,7 +134,40 @@ class _GameOverviewScreenState extends State<GameOverviewScreen> {
             onSelected: widget.onGenreSelected,
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+          child: Text(
+            'Currently playing',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        ..._playingTiles(games),
       ],
     );
+  }
+
+  List<Widget> _playingTiles(List<Game> games) {
+    final playingGames = games
+        .where((game) => game.status == GameStatus.playing)
+        .toList();
+    if (playingGames.isEmpty) {
+      return const [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text('No games currently playing'),
+        ),
+      ];
+    } else {
+      return [
+        for (final game in playingGames)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: GameTile(
+              game: game,
+              onTap: () => widget.onGameSelected(game),
+            ),
+          ),
+      ];
+    }
   }
 }
