@@ -1,5 +1,5 @@
 enum GameStatus {
-  backlog('Backlog'),
+  backlog('To play'),
   playing('Playing'),
   finished('Finished'),
   dropped('Dropped');

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/game.dart';
+import 'game_status_colors.dart';
 
 class OverviewLibrarySummary extends StatelessWidget {
   const OverviewLibrarySummary({super.key, required this.games});
@@ -10,6 +11,7 @@ class OverviewLibrarySummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final statusColors = GameStatusColors.forBrightness(theme.brightness);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -54,7 +56,7 @@ class OverviewLibrarySummary extends StatelessWidget {
                           Text(
                             status.label,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                              color: statusColors.colorFor(status),
                             ),
                           ),
                         ],
