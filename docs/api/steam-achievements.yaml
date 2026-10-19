@@ -1,0 +1,230 @@
+openapi: 3.1.0
+info:
+  title: Steam game achievements
+  version: 1.0.0
+  description: >-
+    Reads one game's achievement schema and a Steam profile's public player
+    progress using a standard Steam user Web API key. Schema and progress are
+    joined by the achievement API name. Missing progress never means locked.
+    The key is sent only from the Worker and is never logged. The Worker does
+    not use Steam's publisher-only partner API host.
+  x-cors:
+    allow-origin: '*'
+    allow-methods: [GET, OPTIONS]
+    allow-headers: [Accept, Content-Type]
+    allow-credentials: false
+  x-rate-limit:
+    limit: 30
+    period-seconds: 60
+    key: caller IP address
+    scope: shared with the existing Steam Worker routes
+externalDocs:
+  description: Steam ISteamUserStats Web API
+  url: https://partner.steamgames.com/doc/webapi/ISteamUserStats
+servers:
+  - url: http://127.0.0.1:8787
+    description: Local Wrangler development server
+  - url: https://{worker_host}
+    description: Deployed Worker. Deployment is not part of this batch.
+    variables:
+      worker_host:
+        default: replace-with-deployed-worker-host
+paths:
+  /v1/steam/profiles/{steam_id}/games/{app_id}/achievements:
+    options:
+      operationId: steamAchievementsCorsPreflight
+      summary: Handle browser CORS preflight
+      security: []
+      responses:
+        '204':
+          description: Preflight accepted. Credentials are not used.
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+                const: '*'
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                const: 'GET, OPTIONS'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                const: 'Accept, Content-Type'
+    get:
+      operationId: getSteamGameAchievements
+      summary: Read one game's achievement definitions and player progress
+      description: >-
+        Calls ISteamUserStats/GetSchemaForGame/v2 with appid and English, then
+        calls ISteamUserStats/GetPlayerAchievements/v1 with appid, steamid,
+        and English if the schema has achievements. Both calls use the
+        standard user API key at https://api.steampowered.com, stored only in
+        the Worker. Definitions are joined to progress by schema name and
+        player apiname. The profile does not need to own the game for this
+        endpoint to try reading progress. A missing progress record or field
+        is unknown, not locked. If player progress cannot be read, the response
+        can still include schema definitions with status progress_unavailable.
+        The schema is valid only when it has a game object. Missing
+        availableGameStats or its achievements field means the game has no
+        exposed achievement definitions; an empty achievements array has the
+        same meaning. A non-object availableGameStats or a non-array
+        achievements field is invalid schema data and returns 502. Each schema
+        achievement must have a unique nonempty name or the schema is invalid.
+        Optional metadata missing or invalid in Steam's response is returned as
+        null. A missing or empty displayName falls back to the stable name.
+        The API does not reliably distinguish private progress from other
+        unavailable progress, so the Worker does not claim a cause.
+        Requests are limited to 30 per caller IP per minute using the shared
+        Worker limiter. App authentication is deferred.
+      security: []
+      parameters:
+        - in: path
+          name: steam_id
+          required: true
+          schema:
+            type: string
+            pattern: '^7656119[0-9]{10}$'
+          description: SteamID64 returned by the profile resolver.
+        - in: path
+          name: app_id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4294967295
+          description: Steam application ID.
+      responses:
+        '200':
+          description: Achievement schema and the available player progress state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AchievementResult'
+        '400':
+          description: SteamID64 or app ID path value is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '405':
+          description: Any method other than GET or OPTIONS is not allowed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: The Worker's shared per-IP request limit was exceeded.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                const: 60
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Unexpected internal error. Details are not returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: Steam could not be reached, returned invalid schema data, or throttled the request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: The Worker has no configured Steam API secret.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    AchievementResult:
+      type: object
+      additionalProperties: false
+      required: [steam_id, app_id, status, achievements]
+      properties:
+        steam_id:
+          type: string
+          pattern: '^7656119[0-9]{10}$'
+        app_id:
+          type: integer
+          minimum: 1
+          maximum: 4294967295
+        status:
+          type: string
+          enum: [available, progress_unavailable, no_achievements]
+          description: >-
+            available means Steam returned a playerstats object with an
+            achievements array and did not report success false or 0;
+            individual progress fields can still be null.
+            progress_unavailable means the definitions are usable but the
+            playerstats object or its achievements array is missing or
+            malformed, or the Steam request failed. This may include private
+            profile data and does not prove the profile is private.
+            no_achievements means Steam returned a valid game object whose
+            achievement definitions are absent or an empty array.
+        achievements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Achievement'
+    Achievement:
+      type: object
+      additionalProperties: false
+      required:
+        - achievement_id
+        - display_name
+        - description
+        - hidden
+        - icon_url
+        - icon_gray_url
+        - unlocked
+        - unlock_time
+      properties:
+        achievement_id:
+          type: string
+          minLength: 1
+          description: Stable schema name joined to the player apiname.
+        display_name:
+          type: string
+          minLength: 1
+          description: Falls back to achievement_id when Steam omits a label.
+        description:
+          type: [string, 'null']
+        hidden:
+          type: [boolean, 'null']
+          description: Steam's hidden value 0 or 1 is mapped to false or true.
+        icon_url:
+          type: [string, 'null']
+        icon_gray_url:
+          type: [string, 'null']
+        unlocked:
+          type: [boolean, 'null']
+          description: >-
+            Steam's achieved value 0 or 1 is mapped to false or true. Null when
+            the record or value is missing or invalid.
+        unlock_time:
+          type: [integer, 'null']
+          minimum: 0
+          description: >-
+            Unix time in seconds when unlocked. Zero is preserved when Steam
+            reports an unlock without a tracked timestamp. Null when locked or
+            no usable unlock time is present.
+    Error:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum:
+            - invalid_request
+            - method_not_allowed
+            - rate_limited
+            - steam_unavailable
+            - steam_api_not_configured
+            - internal_error

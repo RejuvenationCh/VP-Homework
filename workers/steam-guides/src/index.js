@@ -3,6 +3,8 @@ const steamApi = 'https://api.steampowered.com';
 const steamProfilePath = '/v1/steam/profile/resolve';
 const steamGuidePath = '/v1/steam/guides';
 const steamOwnedGamesPath = /^\/v1\/steam\/profiles\/([^/]+)\/games$/;
+const steamAchievementsPath =
+  /^\/v1\/steam\/profiles\/([^/]+)\/games\/([^/]+)\/achievements$/;
 const steamIdPattern = /^7656119[0-9]{10}$/;
 const guideSearchMarker = 'Results for';
 const guideCardPattern =
@@ -53,6 +55,7 @@ const namedHtmlEntities = {
 export default {
   async fetch(request, env) {
     const requestUrl = new URL(request.url);
+    const achievementsMatch = requestUrl.pathname.match(steamAchievementsPath);
     const ownedGamesMatch = requestUrl.pathname.match(steamOwnedGamesPath);
     if (request.method === 'OPTIONS') {
       let allowedMethods = 'GET, OPTIONS';
@@ -66,6 +69,14 @@ export default {
     }
     if (requestUrl.pathname === steamProfilePath) {
       return resolveSteamProfile(request, env);
+    }
+    if (achievementsMatch !== null) {
+      return readSteamAchievements(
+        request,
+        env,
+        achievementsMatch[1],
+        achievementsMatch[2],
+      );
     }
     if (ownedGamesMatch !== null) {
       return readOwnedGames(request, env, ownedGamesMatch[1]);
@@ -530,6 +541,222 @@ async function fetchSteamJson(url) {
   } catch (error) {
     return null;
   }
+}
+
+async function readSteamAchievements(request, env, steamId, rawAppId) {
+  const appId = Number(rawAppId);
+  if (
+    request.method !== 'GET' ||
+    !steamIdPattern.test(steamId) ||
+    !/^[1-9][0-9]{0,9}$/.test(rawAppId) ||
+    !Number.isSafeInteger(appId) ||
+    appId > 4294967295
+  ) {
+    const status = request.method === 'GET' ? 400 : 405;
+    const error = status === 400 ? 'invalid_request' : 'method_not_allowed';
+    return jsonResponse({ error }, status);
+  }
+
+  const rateLimitResponse = await checkSteamRateLimit(request, env);
+  if (rateLimitResponse !== null) return rateLimitResponse;
+  if (
+    typeof env.STEAM_API_KEY !== 'string' ||
+    env.STEAM_API_KEY.trim().length === 0
+  ) {
+    return jsonResponse({ error: 'steam_api_not_configured' }, 503);
+  }
+
+  const schemaUrl = new URL(
+    '/ISteamUserStats/GetSchemaForGame/v2/',
+    steamApi,
+  );
+  schemaUrl.searchParams.set('key', env.STEAM_API_KEY);
+  schemaUrl.searchParams.set('appid', String(appId));
+  schemaUrl.searchParams.set('l', 'english');
+  const schemaPayload = await fetchSteamJson(schemaUrl);
+  if (schemaPayload === null) {
+    return jsonResponse({ error: 'steam_unavailable' }, 502);
+  }
+  const schema = parseSteamAchievementSchema(schemaPayload);
+  if (schema === null) {
+    return jsonResponse({ error: 'steam_unavailable' }, 502);
+  }
+  if (schema.length === 0) {
+    return steamAchievementsResult(steamId, appId, 'no_achievements', []);
+  }
+
+  const progressUrl = new URL(
+    '/ISteamUserStats/GetPlayerAchievements/v1/',
+    steamApi,
+  );
+  progressUrl.searchParams.set('key', env.STEAM_API_KEY);
+  progressUrl.searchParams.set('steamid', steamId);
+  progressUrl.searchParams.set('appid', String(appId));
+  progressUrl.searchParams.set('l', 'english');
+  const progressPayload = await fetchSteamJson(progressUrl);
+  const progress = parseSteamPlayerAchievements(progressPayload);
+  if (progress === null) {
+    return steamAchievementsResult(
+      steamId,
+      appId,
+      'progress_unavailable',
+      mapSteamAchievementProgress(schema, new Map()),
+    );
+  }
+  return steamAchievementsResult(
+    steamId,
+    appId,
+    'available',
+    mapSteamAchievementProgress(schema, progress),
+  );
+}
+
+function parseSteamAchievementSchema(payload) {
+  if (
+    payload === null ||
+    typeof payload !== 'object' ||
+    Array.isArray(payload) ||
+    payload.game === null ||
+    typeof payload.game !== 'object' ||
+    Array.isArray(payload.game)
+  ) {
+    return null;
+  }
+
+  const gameStats = payload.game.availableGameStats;
+  if (gameStats === undefined) return [];
+  if (
+    gameStats === null ||
+    typeof gameStats !== 'object' ||
+    Array.isArray(gameStats)
+  ) {
+    return null;
+  }
+  const rawAchievements = gameStats.achievements;
+  if (rawAchievements === undefined) return [];
+  if (!Array.isArray(rawAchievements)) return null;
+
+  const achievements = [];
+  const ids = new Set();
+  for (const item of rawAchievements) {
+    if (item === null || typeof item !== 'object' || Array.isArray(item)) {
+      return null;
+    }
+    if (typeof item.name !== 'string' || item.name.trim().length === 0) {
+      return null;
+    }
+    const achievementId = item.name.trim();
+    if (ids.has(achievementId)) return null;
+    ids.add(achievementId);
+
+    let displayName = achievementId;
+    if (
+      typeof item.displayName === 'string' &&
+      item.displayName.trim().length > 0
+    ) {
+      displayName = item.displayName;
+    }
+    achievements.push({
+      achievement_id: achievementId,
+      display_name: displayName,
+      description: nullableString(item.description),
+      hidden: steamFlag(item.hidden),
+      icon_url: nullableString(item.icon),
+      icon_gray_url: nullableString(item.icongray),
+    });
+  }
+  return achievements;
+}
+
+function nullableString(value) {
+  if (typeof value !== 'string' || value.trim().length === 0) return null;
+  return value;
+}
+
+function steamFlag(value) {
+  if (value === 0 || value === false) return false;
+  if (value === 1 || value === true) return true;
+  return null;
+}
+
+function parseSteamPlayerAchievements(payload) {
+  if (
+    payload === null ||
+    typeof payload !== 'object' ||
+    Array.isArray(payload) ||
+    payload.playerstats === null ||
+    typeof payload.playerstats !== 'object' ||
+    Array.isArray(payload.playerstats)
+  ) {
+    return null;
+  }
+  const playerStats = payload.playerstats;
+  if (
+    playerStats.success === false ||
+    playerStats.success === 0 ||
+    !Array.isArray(playerStats.achievements)
+  ) {
+    return null;
+  }
+
+  const progress = new Map();
+  const duplicateIds = new Set();
+  for (const item of playerStats.achievements) {
+    if (
+      item === null ||
+      typeof item !== 'object' ||
+      Array.isArray(item) ||
+      typeof item.apiname !== 'string' ||
+      item.apiname.trim().length === 0
+    ) {
+      continue;
+    }
+    const achievementId = item.apiname.trim();
+    if (progress.has(achievementId)) {
+      duplicateIds.add(achievementId);
+      continue;
+    }
+    const unlocked = steamFlag(item.achieved);
+    let unlockTime = null;
+    if (
+      unlocked === true &&
+      Number.isSafeInteger(item.unlocktime) &&
+      item.unlocktime >= 0
+    ) {
+      unlockTime = item.unlocktime;
+    }
+    progress.set(achievementId, { unlocked, unlockTime });
+  }
+  for (const achievementId of duplicateIds) {
+    progress.set(achievementId, { unlocked: null, unlockTime: null });
+  }
+  return progress;
+}
+
+function mapSteamAchievementProgress(schema, progress) {
+  const achievements = [];
+  for (const achievement of schema) {
+    const playerAchievement = progress.get(achievement.achievement_id);
+    let unlocked = null;
+    let unlockTime = null;
+    if (playerAchievement !== undefined) {
+      unlocked = playerAchievement.unlocked;
+      unlockTime = playerAchievement.unlockTime;
+    }
+    achievements.push({
+      ...achievement,
+      unlocked,
+      unlock_time: unlockTime,
+    });
+  }
+  return achievements;
+}
+
+function steamAchievementsResult(steamId, appId, status, achievements) {
+  return jsonResponse(
+    { steam_id: steamId, app_id: appId, status, achievements },
+    200,
+  );
 }
 
 function ownedGamesResponse(steamId, response) {
