@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/game_library_storage.dart';
 import '../models/game.dart';
 import 'genre_bubble_map.dart';
+import 'overview_library_summary.dart';
 
 class GameOverviewScreen extends StatefulWidget {
   const GameOverviewScreen({
@@ -58,7 +59,7 @@ class _GameOverviewScreenState extends State<GameOverviewScreen> {
             }
             final games = snapshot.data;
             if (games == null || games.isEmpty) {
-              return const Center(child: Text('No games yet'));
+              return _emptyOverview();
             } else {
               return _genreList(context, games);
             }
@@ -77,6 +78,23 @@ class _GameOverviewScreenState extends State<GameOverviewScreen> {
           TextButton(onPressed: _retry, child: const Text('Retry')),
         ],
       ),
+    );
+  }
+
+  Widget _emptyOverview() {
+    return const CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.all(16),
+          sliver: SliverToBoxAdapter(
+            child: OverviewLibrarySummary(games: []),
+          ),
+        ),
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(child: Text('No games yet')),
+        ),
+      ],
     );
   }
 
@@ -99,6 +117,8 @@ class _GameOverviewScreenState extends State<GameOverviewScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        OverviewLibrarySummary(games: games),
+        const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: Text(
