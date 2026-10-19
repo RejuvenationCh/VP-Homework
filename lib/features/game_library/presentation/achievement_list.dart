@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../models/achievement.dart';
 import '../models/game.dart';
+import 'achievement_list_header.dart';
 import 'achievement_no_results.dart';
 import 'achievement_progress_filter.dart';
+import 'achievement_search_field.dart';
 import 'achievement_tile.dart';
+import 'game_notes_screen.dart';
 
 class AchievementList extends StatefulWidget {
   const AchievementList({
@@ -23,6 +26,7 @@ class AchievementList extends StatefulWidget {
 class _AchievementListState extends State<AchievementList> {
   final _searchController = TextEditingController();
   final Set<String> _trackedAchievementIds = {};
+  final Map<String, String> _notesByAchievementId = {};
   String _query = '';
   AchievementProgressFilter _progressFilter = AchievementProgressFilter.all;
 
@@ -72,10 +76,36 @@ class _AchievementListState extends State<AchievementList> {
     });
   }
 
+  Future<void> _editNotes(Achievement achievement) async {
+    var notes = '';
+    if (_notesByAchievementId.containsKey(achievement.id)) {
+      notes = _notesByAchievementId[achievement.id]!;
+    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => GameNotesScreen(
+          title: '${achievement.name} notes',
+          initialNotes: notes,
+          description: achievement.description,
+          onSave: (value) async {
+            setState(() => _notesByAchievementId[achievement.id] = value);
+            return true;
+          },
+        ),
+      ),
+    );
+  }
+
   void _clearSearch() {
     _searchController.clear();
     setState(() {
       _query = '';
+    });
+  }
+
+  void _updateQuery(String value) {
+    setState(() {
+      _query = value;
     });
   }
 
@@ -99,11 +129,16 @@ class _AchievementListState extends State<AchievementList> {
       itemCount: itemCount,
       itemBuilder: (context, index) {
         if (index == 0) {
-          return _header(context);
+          return AchievementListHeader(gameName: widget.game.name);
         } else if (index == 1) {
           return _progressFilterSelector();
         } else if (index == 2) {
-          return _searchField();
+          return AchievementSearchField(
+            controller: _searchController,
+            query: _query,
+            onChanged: _updateQuery,
+            onClear: _clearSearch,
+          );
         } else if (achievements.isEmpty) {
           return AchievementNoResults(
             showClearSearch: _query.trim().isNotEmpty,
@@ -116,6 +151,8 @@ class _AchievementListState extends State<AchievementList> {
             achievement: achievement,
             isTracked: _trackedAchievementIds.contains(achievement.id),
             onTrackChanged: () => _toggleTracked(achievement),
+            notes: _notesByAchievementId[achievement.id],
+            onNotesTap: () => _editNotes(achievement),
           );
         }
       },
@@ -134,49 +171,5 @@ class _AchievementListState extends State<AchievementList> {
         },
       ),
     );
-  }
-
-  Widget _header(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(widget.game.name, style: Theme.of(context).textTheme.titleLarge),
-        const Align(
-          alignment: Alignment.centerLeft,
-          child: Chip(label: Text('Sample data')),
-        ),
-      ],
-    );
-  }
-
-  Widget _searchField() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          labelText: 'Search achievements',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _clearButton(),
-        ),
-        onChanged: (value) {
-          setState(() {
-            _query = value;
-          });
-        },
-      ),
-    );
-  }
-
-  Widget? _clearButton() {
-    if (_query.isNotEmpty) {
-      return IconButton(
-        tooltip: 'Clear search',
-        onPressed: _clearSearch,
-        icon: const Icon(Icons.clear),
-      );
-    } else {
-      return null;
-    }
   }
 }

@@ -164,6 +164,7 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (context) => GameNotesScreen(
+          title: 'Game notes',
           initialNotes: _game.notes,
           onSave: (notes) => _saveGame(
             _game.copyWith(

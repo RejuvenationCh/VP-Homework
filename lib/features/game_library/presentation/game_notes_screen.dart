@@ -28,12 +28,16 @@ class GameNotesEntry extends StatelessWidget {
 class GameNotesScreen extends StatefulWidget {
   const GameNotesScreen({
     super.key,
+    required this.title,
     required this.initialNotes,
     required this.onSave,
+    this.description,
   });
 
+  final String title;
   final String initialNotes;
   final Future<bool> Function(String) onSave;
+  final String? description;
 
   @override
   State<GameNotesScreen> createState() => _GameNotesScreenState();
@@ -60,13 +64,20 @@ class _GameNotesScreenState extends State<GameNotesScreen> {
     return PopScope(
       canPop: !_isSaving,
       child: Scaffold(
-        appBar: AppBar(title: const Text('Game notes')),
+        appBar: AppBar(
+          title: Text(
+            widget.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                _description(context),
                 Expanded(
                   child: TextField(
                     controller: _controller,
@@ -116,6 +127,31 @@ class _GameNotesScreenState extends State<GameNotesScreen> {
         ),
       ),
     );
+  }
+
+  Widget _description(BuildContext context) {
+    if (widget.description == null) {
+      return const SizedBox.shrink();
+    } else {
+      var description = widget.description!;
+      if (description.isEmpty) {
+        description = 'No description available.';
+      }
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Description', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 120),
+              child: SingleChildScrollView(child: Text(description)),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _discard() {
