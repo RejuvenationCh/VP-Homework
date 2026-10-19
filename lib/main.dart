@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
 import 'features/game_library/data/game_library_storage.dart';
-import 'features/game_library/presentation/game_library_screen.dart';
+import 'features/game_library/presentation/game_backlog_navigation.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
     final providedHome = home;
     Widget firstScreen;
     if (providedHome == null) {
-      firstScreen = GameLibraryScreen(storage: GameLibraryStorage());
+      firstScreen = GameBacklogNavigation(storage: GameLibraryStorage());
     } else {
       firstScreen = providedHome;
     }
