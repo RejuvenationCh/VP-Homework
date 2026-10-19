@@ -32,7 +32,7 @@ class GameLibraryGrid extends StatelessWidget {
         final width =
             (constraints.crossAxisExtent - (columns - 1) * 16) / columns;
         var height =
-            width * 9 / 16 + MediaQuery.textScalerOf(context).scale(132);
+            width * 9 / 16 + MediaQuery.textScalerOf(context).scale(132) + 8;
         final preview = h2Preview;
         var longName = false;
         if (preview != null && preview.showError) {

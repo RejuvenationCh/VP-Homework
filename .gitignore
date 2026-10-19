@@ -57,3 +57,4 @@ app.*.map.json
 /docs/afl/progress.md
 /docs/afl/ui-ux-plan.md
 /docs/afl/ui-screenshots/
+/.playwright-mcp/
