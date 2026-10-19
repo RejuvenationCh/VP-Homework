@@ -12,11 +12,13 @@ class GameLibraryContent extends StatefulWidget {
     required this.games,
     required this.onAddGame,
     required this.onLoadSamples,
+    required this.onOpenGame,
   });
 
   final List<Game> games;
   final Future<void> Function(List<Game> games) onAddGame;
   final void Function(List<Game> games) onLoadSamples;
+  final ValueChanged<Game> onOpenGame;
 
   @override
   State<GameLibraryContent> createState() => _GameLibraryContentState();
@@ -109,7 +111,7 @@ class _GameLibraryContentState extends State<GameLibraryContent> {
         if (visibleGames.isEmpty)
           SliverFillRemaining(hasScrollBody: false, child: _buildNoResults())
         else
-          GameLibraryGrid(games: visibleGames),
+          GameLibraryGrid(games: visibleGames, onOpenGame: widget.onOpenGame),
       ],
     );
   }

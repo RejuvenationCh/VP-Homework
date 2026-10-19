@@ -4,9 +4,14 @@ import '../models/game.dart';
 import 'game_tile.dart';
 
 class GameLibraryGrid extends StatelessWidget {
-  const GameLibraryGrid({super.key, required this.games});
+  const GameLibraryGrid({
+    super.key,
+    required this.games,
+    required this.onOpenGame,
+  });
 
   final List<Game> games;
+  final ValueChanged<Game> onOpenGame;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +39,10 @@ class GameLibraryGrid extends StatelessWidget {
               crossAxisSpacing: 12,
               childAspectRatio: childAspectRatio,
             ),
-            itemBuilder: (context, index) => GameTile(game: games[index]),
+            itemBuilder: (context, index) => GameTile(
+              game: games[index],
+              onTap: () => onOpenGame(games[index]),
+            ),
           );
         },
       ),

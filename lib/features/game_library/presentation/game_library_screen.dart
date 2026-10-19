@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/sample_games.dart';
 import '../models/game.dart';
 import 'add_game_dialog.dart';
+import 'game_details_screen.dart';
 import 'game_library_content.dart';
 
 class GameLibraryScreen extends StatefulWidget {
@@ -79,6 +80,14 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
     });
   }
 
+  void _openGame(Game game) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => GameDetailsScreen(game: game),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,6 +136,7 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
       games: games,
       onAddGame: _addGame,
       onLoadSamples: _loadSamples,
+      onOpenGame: _openGame,
     );
   }
 }
