@@ -4,11 +4,19 @@ import '../data/game_library_storage.dart';
 import '../models/game.dart';
 import 'game_library_screen.dart';
 import 'game_overview_screen.dart';
+import 'game_settings_screen.dart';
 
 class GameBacklogNavigation extends StatefulWidget {
-  const GameBacklogNavigation({super.key, required this.storage});
+  const GameBacklogNavigation({
+    super.key,
+    required this.storage,
+    required this.themeMode,
+    required this.onThemeModeChanged,
+  });
 
   final GameLibraryStorage storage;
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
 
   @override
   State<GameBacklogNavigation> createState() => _GameBacklogNavigationState();
@@ -52,9 +60,9 @@ class _GameBacklogNavigationState extends State<GameBacklogNavigation> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: _selectedIndex != 1 || _genreRequest == null,
+      canPop: _selectedIndex == 0,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && _selectedIndex == 1 && _genreRequest != null) {
+        if (!didPop && _selectedIndex != 0) {
           _selectDestination(0);
         }
       },
@@ -73,6 +81,10 @@ class _GameBacklogNavigationState extends State<GameBacklogNavigation> {
               storage: widget.storage,
               genreRequest: _genreRequest,
             ),
+            GameSettingsScreen(
+              themeMode: widget.themeMode,
+              onThemeModeChanged: widget.onThemeModeChanged,
+            ),
           ],
         ),
         bottomNavigationBar: NavigationBar(
@@ -88,6 +100,11 @@ class _GameBacklogNavigationState extends State<GameBacklogNavigation> {
               icon: Icon(Icons.videogame_asset_outlined),
               selectedIcon: Icon(Icons.videogame_asset),
               label: 'Library',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings),
+              label: 'Settings',
             ),
           ],
         ),
