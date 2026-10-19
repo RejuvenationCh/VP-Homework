@@ -86,6 +86,7 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
         builder: (context) => GameDetailsScreen(
           game: game,
           onStatusChanged: (status) => _setGameStatus(games, game.id, status),
+          onRatingChanged: (rating) => _setGameRating(games, game.id, rating),
         ),
       ),
     );
@@ -98,16 +99,19 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
     } else {
       setState(() {
         final game = games[gameIndex];
-        games[gameIndex] = Game(
-          id: game.id,
-          name: game.name,
-          primaryGenre: game.primaryGenre,
-          platform: game.platform,
-          status: status,
-          isSample: game.isSample,
-          artworkUrl: game.artworkUrl,
-          playtimeMinutes: game.playtimeMinutes,
-        );
+        games[gameIndex] = game.copyWith(status: status, rating: game.rating);
+      });
+    }
+  }
+
+  void _setGameRating(List<Game> games, String gameId, int? rating) {
+    final gameIndex = games.indexWhere((game) => game.id == gameId);
+    if (gameIndex < 0) {
+      return;
+    } else {
+      setState(() {
+        final game = games[gameIndex];
+        games[gameIndex] = game.copyWith(status: game.status, rating: rating);
       });
     }
   }

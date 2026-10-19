@@ -19,6 +19,7 @@ class Game {
     this.isSample = false,
     this.artworkUrl,
     this.playtimeMinutes,
+    this.rating,
   });
 
   // Game info is separate from the personal status below
@@ -29,7 +30,22 @@ class Game {
   final bool isSample;
   final String? artworkUrl;
   final int? playtimeMinutes;
+  final int? rating;
 
   // User chooses the status, not based on playtime or achievements
   final GameStatus status;
+
+  Game copyWith({required GameStatus status, required int? rating}) {
+    return Game(
+      id: id,
+      name: name,
+      primaryGenre: primaryGenre,
+      platform: platform,
+      status: status,
+      isSample: isSample,
+      artworkUrl: artworkUrl,
+      playtimeMinutes: playtimeMinutes,
+      rating: rating,
+    );
+  }
 }

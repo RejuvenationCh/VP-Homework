@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../models/game.dart';
 import 'game_artwork.dart';
+import 'game_rating_control.dart';
 
 class GameDetailsScreen extends StatefulWidget {
   const GameDetailsScreen({
     super.key,
     required this.game,
     required this.onStatusChanged,
+    required this.onRatingChanged,
   });
 
   final Game game;
   final ValueChanged<GameStatus> onStatusChanged;
+  final ValueChanged<int?> onRatingChanged;
 
   @override
   State<GameDetailsScreen> createState() => _GameDetailsScreenState();
@@ -19,11 +22,13 @@ class GameDetailsScreen extends StatefulWidget {
 
 class _GameDetailsScreenState extends State<GameDetailsScreen> {
   late GameStatus _status;
+  int? _rating;
 
   @override
   void initState() {
     super.initState();
     _status = widget.game.status;
+    _rating = widget.game.rating;
   }
 
   @override
@@ -67,6 +72,10 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
                         _formatPlaytime(widget.game.playtimeMinutes),
                       ),
                       _statusSelector(context),
+                      GameRatingControl(
+                        rating: _rating,
+                        onChanged: _updateRating,
+                      ),
                     ],
                   ),
                 ),
@@ -133,5 +142,10 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
         },
       ),
     );
+  }
+
+  void _updateRating(int? rating) {
+    setState(() => _rating = rating);
+    widget.onRatingChanged(rating);
   }
 }
