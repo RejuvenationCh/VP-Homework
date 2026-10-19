@@ -8,7 +8,7 @@ class GameRatingControl extends StatelessWidget {
   });
 
   final int? rating;
-  final ValueChanged<int?> onChanged;
+  final ValueChanged<int?>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +21,9 @@ class GameRatingControl extends StatelessWidget {
     }
 
     VoidCallback? clearRating;
-    if (currentRating != null) {
-      clearRating = () => onChanged(null);
+    final onChangedHandler = onChanged;
+    if (currentRating != null && onChangedHandler != null) {
+      clearRating = () => onChangedHandler(null);
     }
 
     return Padding(
@@ -36,7 +37,12 @@ class GameRatingControl extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: List.generate(
               5,
-              (index) => _starButton(context, index + 1, currentRating),
+              (index) => _starButton(
+                context,
+                index + 1,
+                currentRating,
+                onChangedHandler,
+              ),
             ),
           ),
           Text(ratingLabel),
@@ -60,7 +66,12 @@ class GameRatingControl extends StatelessWidget {
     );
   }
 
-  Widget _starButton(BuildContext context, int value, int? rating) {
+  Widget _starButton(
+    BuildContext context,
+    int value,
+    int? rating,
+    ValueChanged<int?>? onChanged,
+  ) {
     IconData icon;
     if (rating != null && value <= rating) {
       icon = Icons.star;
@@ -70,7 +81,7 @@ class GameRatingControl extends StatelessWidget {
 
     return IconButton(
       tooltip: 'Rate $value out of 5',
-      onPressed: () => onChanged(value),
+      onPressed: onChanged == null ? null : () => onChanged(value),
       icon: Icon(icon),
       color: Theme.of(context).colorScheme.primary,
       constraints: const BoxConstraints(minWidth: 48, minHeight: 48),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'media_demos/media_cleaner_screen.dart';
 import 'media_demos/storage_overview_screen.dart';
 import '../main.dart';
+import '../features/game_library/data/game_library_storage.dart';
 import '../features/game_library/presentation/game_library_screen.dart';
 import 'responsive_fixtures.dart';
 import 'constraint_scenario.dart';
@@ -13,13 +14,16 @@ import 'harness_scenario_controls.dart';
 import 'harness_device_controls.dart';
 
 class DeviceHarness extends StatefulWidget {
-  const DeviceHarness({super.key});
+  const DeviceHarness({super.key, this.persistLibrary = false});
+
+  final bool persistLibrary;
 
   @override
   State<DeviceHarness> createState() => _DeviceHarnessState();
 }
 
 class _DeviceHarnessState extends State<DeviceHarness> {
+  late final GameLibraryStorage _libraryStorage = GameLibraryStorage();
   DemoDevice _device = DemoDevice.small;
   DemoData _data = DemoData.normal;
   DemoScreen _page = DemoScreen.library;
@@ -32,6 +36,14 @@ class _DeviceHarnessState extends State<DeviceHarness> {
   bool _showFix = true;
 
   Size get _screen => _landscape ? _device.size.flipped : _device.size;
+
+  Widget _libraryScreen() {
+    if (widget.persistLibrary) {
+      return GameLibraryScreen(storage: _libraryStorage);
+    } else {
+      return const GameLibraryScreen();
+    }
+  }
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -60,7 +72,7 @@ class _DeviceHarnessState extends State<DeviceHarness> {
                   builder: (context, child) =>
                       MediaQuery(data: media, child: child!),
                   home: switch (_page) {
-                    DemoScreen.library => const GameLibraryScreen(),
+                    DemoScreen.library => _libraryScreen(),
                     DemoScreen.retry => const LibraryRetryDemo(),
                     DemoScreen.overview => StorageOverviewScreen(
                       items: _data.items,

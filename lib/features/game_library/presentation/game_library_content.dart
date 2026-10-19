@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../models/game.dart';
-import 'game_library_controls.dart';
 import 'game_library_empty_state.dart';
 import 'game_library_filter.dart';
 import 'game_library_grid.dart';
+import 'game_library_header.dart';
 
 class GameLibraryContent extends StatefulWidget {
   const GameLibraryContent({
@@ -17,7 +17,7 @@ class GameLibraryContent extends StatefulWidget {
 
   final List<Game> games;
   final Future<void> Function(List<Game> games) onAddGame;
-  final void Function(List<Game> games) onLoadSamples;
+  final Future<void> Function(List<Game> games) onLoadSamples;
   final ValueChanged<Game> onOpenGame;
 
   @override
@@ -30,6 +30,7 @@ class _GameLibraryContentState extends State<GameLibraryContent> {
   String? _selectedGenre;
   String? _selectedPlatform;
   GameStatus? _selectedStatus;
+  bool _favoritesOnly = false;
   GameLibrarySort _sort = GameLibrarySort.nameAscending;
 
   @override
@@ -52,6 +53,7 @@ class _GameLibraryContentState extends State<GameLibraryContent> {
       _selectedGenre = null;
       _selectedPlatform = null;
       _selectedStatus = null;
+      _favoritesOnly = false;
     });
   }
 
@@ -59,7 +61,8 @@ class _GameLibraryContentState extends State<GameLibraryContent> {
     if (_query.trim().isNotEmpty ||
         _selectedGenre != null ||
         _selectedPlatform != null ||
-        _selectedStatus != null) {
+        _selectedStatus != null ||
+        _favoritesOnly) {
       return true;
     } else {
       return false;
@@ -102,71 +105,39 @@ class _GameLibraryContentState extends State<GameLibraryContent> {
       genre: _selectedGenre,
       platform: _selectedPlatform,
       status: _selectedStatus,
+      favoritesOnly: _favoritesOnly,
       sort: _sort,
     );
 
     return CustomScrollView(
       slivers: [
-        _buildHeader(),
+        GameLibraryHeader(
+          games: widget.games,
+          searchController: _searchController,
+          query: _query,
+          selectedGenre: _selectedGenre,
+          selectedPlatform: _selectedPlatform,
+          selectedStatus: _selectedStatus,
+          favoritesOnly: _favoritesOnly,
+          sort: _sort,
+          hasActiveFilters: _hasActiveFilters,
+          onAddGame: widget.onAddGame,
+          onLoadSamples: widget.onLoadSamples,
+          onSearchChanged: (value) => setState(() => _query = value),
+          onClearSearch: _clearSearch,
+          onGenreChanged: (value) => setState(() => _selectedGenre = value),
+          onPlatformChanged: (value) =>
+              setState(() => _selectedPlatform = value),
+          onStatusChanged: (value) => setState(() => _selectedStatus = value),
+          onFavoritesChanged: (value) => setState(() => _favoritesOnly = value),
+          onSortChanged: (value) => setState(() => _sort = value),
+          onResetFilters: _resetFilters,
+        ),
         if (visibleGames.isEmpty)
           SliverFillRemaining(hasScrollBody: false, child: _buildNoResults())
         else
           GameLibraryGrid(games: visibleGames, onOpenGame: widget.onOpenGame),
       ],
-    );
-  }
-
-  Widget _buildHeader() {
-    return SliverPadding(
-      padding: const EdgeInsets.all(16),
-      sliver: SliverToBoxAdapter(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Library', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton.icon(
-                  onPressed: () {
-                    widget.onAddGame(widget.games);
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add game'),
-                ),
-                TextButton.icon(
-                  onPressed: () => widget.onLoadSamples(widget.games),
-                  icon: const Icon(Icons.download),
-                  label: const Text('Load sample games'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            GameLibraryControls(
-              searchController: _searchController,
-              query: _query,
-              genres: libraryGenres(widget.games),
-              platforms: libraryPlatforms(widget.games),
-              selectedGenre: _selectedGenre,
-              selectedPlatform: _selectedPlatform,
-              selectedStatus: _selectedStatus,
-              sort: _sort,
-              hasActiveFilters: _hasActiveFilters,
-              onSearchChanged: (value) => setState(() => _query = value),
-              onClearSearch: _clearSearch,
-              onGenreChanged: (value) => setState(() => _selectedGenre = value),
-              onPlatformChanged: (value) =>
-                  setState(() => _selectedPlatform = value),
-              onStatusChanged: (value) =>
-                  setState(() => _selectedStatus = value),
-              onSortChanged: (value) => setState(() => _sort = value),
-              onResetFilters: _resetFilters,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -179,7 +150,8 @@ class _GameLibraryContentState extends State<GameLibraryContent> {
     }
     if (_selectedGenre != null ||
         _selectedPlatform != null ||
-        _selectedStatus != null) {
+        _selectedStatus != null ||
+        _favoritesOnly) {
       actions.add(
         TextButton(
           onPressed: _resetFilters,

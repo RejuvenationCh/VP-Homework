@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../data/sample_games.dart';
+import '../data/game_library_changes.dart';
+import '../data/game_library_storage.dart';
 import '../models/game.dart';
-import 'add_game_dialog.dart';
 import 'game_details_screen.dart';
-import 'game_library_content.dart';
+import 'game_form_screen.dart';
+import 'game_library_body.dart';
 
 class GameLibraryScreen extends StatefulWidget {
-  const GameLibraryScreen({super.key, this.loadGames});
+  const GameLibraryScreen({super.key, this.loadGames, this.storage});
 
   final Future<List<Game>> Function()? loadGames;
+  final GameLibraryStorage? storage;
 
   @override
   State<GameLibraryScreen> createState() => _GameLibraryScreenState();
@@ -17,15 +19,26 @@ class GameLibraryScreen extends StatefulWidget {
 
 class _GameLibraryScreenState extends State<GameLibraryScreen> {
   late Future<List<Game>> _games;
-  int _nextManualId = 0;
+  List<Game>? _libraryGames;
+  final _manualGameIds = ManualGameIds();
+  bool _isSavingLibrary = false;
 
-  Future<List<Game>> _loadGames() {
+  Future<List<Game>> _loadGames() async {
+    List<Game> games;
     final loader = widget.loadGames;
-    if (loader == null) {
-      return Future.value(<Game>[]);
+    if (loader != null) {
+      games = await Future.sync(loader);
     } else {
-      return Future.sync(loader).then((games) => List<Game>.of(games));
+      final storage = widget.storage;
+      if (storage != null) {
+        games = await storage.loadGames();
+      } else {
+        games = <Game>[];
+      }
     }
+    final copy = List<Game>.of(games);
+    _libraryGames = copy;
+    return copy;
   }
 
   @override
@@ -37,7 +50,8 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
   @override
   void didUpdateWidget(GameLibraryScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.loadGames != widget.loadGames) {
+    if (oldWidget.loadGames != widget.loadGames ||
+        oldWidget.storage != widget.storage) {
       _games = _loadGames();
     }
   }
@@ -49,85 +63,118 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
   }
 
   Future<void> _addGame(List<Game> games) async {
-    final activeLoad = _games;
-    final title = await showDialog<String>(
-      context: context,
-      builder: (context) => const AddGameDialog(),
+    final draft = Game(
+      id: _manualGameIds.next(_currentGames()),
+      name: '',
+      primaryGenre: 'Unsorted',
+      platform: 'Unspecified',
+      status: GameStatus.backlog,
     );
-    if (!mounted || activeLoad != _games || title == null) {
-      return;
-    }
-    setState(() {
-      games.add(
-        Game(
-          id: 'manual-${_nextManualId++}',
-          name: title,
-          primaryGenre: 'Unsorted',
-          platform: 'Unspecified',
-          status: GameStatus.backlog,
-        ),
-      );
-    });
-  }
-
-  void _loadSamples(List<Game> games) {
-    setState(() {
-      for (final sample in sampleGames) {
-        if (!games.any((game) => game.id == sample.id)) {
-          games.add(sample);
-        }
-      }
-    });
-  }
-
-  void _openGame(Game game, List<Game> games) {
-    Navigator.of(context).push<void>(
+    await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (context) => GameDetailsScreen(
-          game: game,
-          onStatusChanged: (status) => _updateGame(
-            games,
-            game.id,
-            (current) => current.copyWith(
-              status: status,
-              rating: current.rating,
-              notes: current.notes,
-            ),
-          ),
-          onRatingChanged: (rating) => _updateGame(
-            games,
-            game.id,
-            (current) => current.copyWith(
-              status: current.status,
-              rating: rating,
-              notes: current.notes,
-            ),
-          ),
-          onNotesChanged: (notes) => _updateGame(
-            games,
-            game.id,
-            (current) => current.copyWith(
-              status: current.status,
-              rating: current.rating,
-              notes: notes,
-            ),
-          ),
-          onFavoriteChanged: (favorite) => _updateGame(
-            games,
-            game.id,
-            (current) => current.withFavorite(favorite),
-          ),
+        builder: (context) => GameFormScreen(
+          game: draft,
+          isNew: true,
+          onSave: _addToCurrentLibrary,
         ),
       ),
     );
   }
 
-  void _updateGame(List<Game> games, String id, Game Function(Game) update) {
-    final gameIndex = games.indexWhere((game) => game.id == id);
-    if (gameIndex < 0) {
-      return;
+  Future<bool> _addToCurrentLibrary(Game game) async {
+    final updatedGames = List<Game>.of(_currentGames());
+    updatedGames.add(game);
+    return _saveAndPublish(updatedGames);
+  }
+
+  Future<void> _loadSamples(List<Game> games) async {
+    final current = _currentGames();
+    final updatedGames = withSampleGames(current);
+    if (updatedGames.length != current.length) {
+      await _saveAndPublish(updatedGames);
+    }
+  }
+
+  void _openGame(Game game) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => GameDetailsScreen(
+          game: game,
+          onGameChanged: _updateGame,
+          onEditGame: _editGame,
+          onRemoveGame: _removeGame,
+        ),
+      ),
+    );
+  }
+
+  Future<Game?> _editGame(Game game) {
+    return Navigator.of(context).push<Game>(
+      MaterialPageRoute<Game>(
+        builder: (context) =>
+            GameFormScreen(game: game, isNew: false, onSave: _updateGame),
+      ),
+    );
+  }
+
+  Future<bool> _updateGame(Game updated) async {
+    final updatedGames = withUpdatedGame(_currentGames(), updated);
+    if (updatedGames == null) {
+      return false;
     } else {
-      setState(() => games[gameIndex] = update(games[gameIndex]));
+      return _saveAndPublish(updatedGames);
+    }
+  }
+
+  Future<bool> _removeGame(Game game) async {
+    final updatedGames = withoutGame(_currentGames(), game);
+    if (updatedGames == null) {
+      return false;
+    } else {
+      return _saveAndPublish(updatedGames);
+    }
+  }
+
+  Future<bool> _saveAndPublish(List<Game> games) async {
+    if (_isSavingLibrary) {
+      if (mounted) {
+        _showSaveMessage('Another save is in progress. Try again.');
+      }
+      return false;
+    }
+    _isSavingLibrary = true;
+    try {
+      final storage = widget.storage;
+      if (storage != null) {
+        await storage.saveGames(games);
+      }
+      if (!mounted) {
+        return false;
+      } else {
+        setState(() => _libraryGames = List<Game>.of(games));
+        return true;
+      }
+    } catch (_) {
+      if (mounted) {
+        _showSaveMessage('Could not save. Your previous library was kept.');
+      }
+      return false;
+    } finally {
+      _isSavingLibrary = false;
+    }
+  }
+
+  void _showSaveMessage(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  List<Game> _currentGames() {
+    final games = _libraryGames;
+    if (games == null) {
+      return <Game>[];
+    } else {
+      return games;
     }
   }
 
@@ -135,51 +182,15 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Game Backlog')),
-      body: SafeArea(
-        child: FutureBuilder<List<Game>>(
-          future: _games,
-          builder: (context, snapshot) => _buildLibrary(snapshot),
-        ),
+      body: GameLibraryBody(
+        games: _games,
+        currentGames: _libraryGames,
+        hasSavedData: widget.storage != null,
+        onRetry: _retry,
+        onAddGame: _addGame,
+        onLoadSamples: _loadSamples,
+        onOpenGame: _openGame,
       ),
-    );
-  }
-
-  Widget _buildLibrary(AsyncSnapshot<List<Game>> snapshot) {
-    if (snapshot.connectionState != ConnectionState.done) {
-      return const Center(
-        child: CircularProgressIndicator(semanticsLabel: 'Loading games'),
-      );
-    }
-
-    if (snapshot.hasError) {
-      return Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Could not load games'),
-              const SizedBox(height: 8),
-              FilledButton(onPressed: _retry, child: const Text('Retry')),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final loadedGames = snapshot.data;
-    List<Game> games;
-    if (loadedGames == null) {
-      games = [];
-    } else {
-      games = loadedGames;
-    }
-
-    return GameLibraryContent(
-      games: games,
-      onAddGame: _addGame,
-      onLoadSamples: _loadSamples,
-      onOpenGame: (game) => _openGame(game, games),
     );
   }
 }

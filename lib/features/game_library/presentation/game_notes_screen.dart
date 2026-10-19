@@ -4,7 +4,7 @@ class GameNotesEntry extends StatelessWidget {
   const GameNotesEntry({super.key, required this.notes, required this.onTap});
 
   final String notes;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +26,14 @@ class GameNotesEntry extends StatelessWidget {
 }
 
 class GameNotesScreen extends StatefulWidget {
-  const GameNotesScreen({super.key, required this.initialNotes});
+  const GameNotesScreen({
+    super.key,
+    required this.initialNotes,
+    required this.onSave,
+  });
 
   final String initialNotes;
+  final Future<bool> Function(String) onSave;
 
   @override
   State<GameNotesScreen> createState() => _GameNotesScreenState();
@@ -36,6 +41,7 @@ class GameNotesScreen extends StatefulWidget {
 
 class _GameNotesScreenState extends State<GameNotesScreen> {
   late final TextEditingController _controller;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -51,55 +57,61 @@ class _GameNotesScreenState extends State<GameNotesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Game notes')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  autofocus: false,
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
-                  expands: true,
-                  textAlignVertical: TextAlignVertical.top,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes',
-                    border: OutlineInputBorder(),
+    return PopScope(
+      canPop: !_isSaving,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Game notes')),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    enabled: !_isSaving,
+                    autofocus: false,
+                    keyboardType: TextInputType.multiline,
+                    maxLines: null,
+                    expands: true,
+                    textAlignVertical: TextAlignVertical.top,
+                    decoration: const InputDecoration(
+                      labelText: 'Notes',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, 56),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 56),
+                    ),
+                    onPressed: _isSaving ? null : _discard,
+                    child: const Text('Discard'),
                   ),
-                  onPressed: _discard,
-                  child: const Text('Discard'),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  style: FilledButton.styleFrom(minimumSize: const Size(0, 56)),
-                  onPressed: _save,
-                  child: const Text('Save'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 56),
+                    ),
+                    onPressed: _isSaving ? null : _save,
+                    child: const Text('Save'),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -110,7 +122,20 @@ class _GameNotesScreenState extends State<GameNotesScreen> {
     Navigator.of(context).pop();
   }
 
-  void _save() {
-    Navigator.of(context).pop(_controller.text);
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    final saved = await widget.onSave(_controller.text);
+    if (!mounted) {
+      return;
+    } else if (saved) {
+      setState(() => _isSaving = false);
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop();
+    } else {
+      setState(() => _isSaving = false);
+    }
   }
 }

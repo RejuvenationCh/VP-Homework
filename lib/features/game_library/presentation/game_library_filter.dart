@@ -63,6 +63,7 @@ List<Game> filterAndSortGames({
   required String? genre,
   required String? platform,
   required GameStatus? status,
+  required bool favoritesOnly,
   required GameLibrarySort sort,
 }) {
   final normalizedQuery = query.trim().toLowerCase();
@@ -86,6 +87,9 @@ List<Game> filterAndSortGames({
       return false;
     }
     if (status != null && game.status != status) {
+      return false;
+    }
+    if (favoritesOnly && !game.isFavorite) {
       return false;
     }
     return true;

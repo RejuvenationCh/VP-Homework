@@ -2,52 +2,54 @@ import 'package:flutter/material.dart';
 
 import '../models/game.dart';
 import 'game_artwork.dart';
-import 'game_favorite_button.dart';
+import 'game_details_actions.dart';
+import 'game_details_info_card.dart';
 import 'game_notes_screen.dart';
-import 'game_rating_control.dart';
 
 class GameDetailsScreen extends StatefulWidget {
   const GameDetailsScreen({
     super.key,
     required this.game,
-    required this.onStatusChanged,
-    required this.onRatingChanged,
-    required this.onNotesChanged,
-    required this.onFavoriteChanged,
+    required this.onGameChanged,
+    required this.onEditGame,
+    required this.onRemoveGame,
   });
 
   final Game game;
-  final ValueChanged<GameStatus> onStatusChanged;
-  final ValueChanged<int?> onRatingChanged;
-  final ValueChanged<String> onNotesChanged;
-  final ValueChanged<bool> onFavoriteChanged;
+  final Future<bool> Function(Game) onGameChanged;
+  final Future<Game?> Function(Game) onEditGame;
+  final Future<bool> Function(Game) onRemoveGame;
 
   @override
   State<GameDetailsScreen> createState() => _GameDetailsScreenState();
 }
 
 class _GameDetailsScreenState extends State<GameDetailsScreen> {
-  late GameStatus _status;
-  int? _rating;
-  late String _notes;
+  late Game _game;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _status = widget.game.status;
-    _rating = widget.game.rating;
-    _notes = widget.game.notes;
+    _game = widget.game;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Game details'),
+        title: const Text(
+          'Game details',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
-          GameFavoriteButton(
-            isFavorite: widget.game.isFavorite,
-            onChanged: widget.onFavoriteChanged,
+          GameDetailsActions(
+            isFavorite: _game.isFavorite,
+            isSaving: _isSaving,
+            onFavoriteChanged: _updateFavorite,
+            onEdit: _editGame,
+            onRemove: _removeGame,
           ),
         ],
       ),
@@ -59,14 +61,14 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
             children: [
               Align(
                 alignment: Alignment.centerLeft,
-                child: GameArtwork(imageUrl: widget.game.artworkUrl),
+                child: GameArtwork(imageUrl: _game.artworkUrl),
               ),
               const SizedBox(height: 16),
               Text(
-                widget.game.name,
+                _game.name,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
-              if (widget.game.isSample) ...[
+              if (_game.isSample) ...[
                 const SizedBox(height: 8),
                 const Align(
                   alignment: Alignment.centerLeft,
@@ -74,28 +76,11 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
                 ),
               ],
               const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _metadata(context, 'Genre', widget.game.primaryGenre),
-                      _metadata(context, 'Platform', widget.game.platform),
-                      _metadata(
-                        context,
-                        'Playtime',
-                        _formatPlaytime(widget.game.playtimeMinutes),
-                      ),
-                      _statusSelector(context),
-                      GameRatingControl(
-                        rating: _rating,
-                        onChanged: _updateRating,
-                      ),
-                      GameNotesEntry(notes: _notes, onTap: _editNotes),
-                    ],
-                  ),
-                ),
+              GameDetailsInfoCard(
+                game: _game,
+                isSaving: _isSaving,
+                onChanged: _saveGame,
+                onEditNotes: _editNotes,
               ),
             ],
           ),
@@ -104,79 +89,89 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
     );
   }
 
-  Widget _metadata(BuildContext context, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 4),
-          Text(value),
-        ],
-      ),
-    );
+  void _updateFavorite(bool favorite) {
+    _saveGame(_game.withFavorite(favorite));
   }
 
-  String _formatPlaytime(int? minutes) {
-    if (minutes == null || minutes < 0) {
-      return 'Unknown';
+  Future<bool> _saveGame(Game updated) async {
+    if (_isSaving) {
+      return false;
     } else {
-      final hours = minutes ~/ 60;
-      final remainingMinutes = minutes % 60;
+      setState(() => _isSaving = true);
+      final saved = await widget.onGameChanged(updated);
+      if (mounted) {
+        setState(() {
+          if (saved) {
+            _game = updated;
+          }
+          _isSaving = false;
+        });
+      }
+      return saved;
+    }
+  }
 
-      if (hours == 0) {
-        return '$minutes min';
-      } else if (remainingMinutes == 0) {
-        return '$hours hr';
+  Future<void> _editGame() async {
+    if (_isSaving) {
+      return;
+    } else {
+      final updated = await widget.onEditGame(_game);
+      if (!mounted || updated == null) {
+        return;
       } else {
-        return '$hours hr $remainingMinutes min';
+        setState(() => _game = updated);
       }
     }
   }
 
-  Widget _statusSelector(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: DropdownButtonFormField<GameStatus>(
-        initialValue: _status,
-        decoration: const InputDecoration(labelText: 'Personal status'),
-        items: GameStatus.values
-            .map(
-              (status) => DropdownMenuItem<GameStatus>(
-                value: status,
-                child: Text(status.label),
-              ),
-            )
-            .toList(),
-        onChanged: (status) {
-          if (status == null) {
-            return;
-          } else {
-            setState(() => _status = status);
-            widget.onStatusChanged(status);
-          }
-        },
+  Future<void> _removeGame() async {
+    final shouldRemove = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove from library?'),
+        content: Text(
+          'Remove ${_game.name} from this library? Steam ownership and '
+          'installation will not change.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
       ),
     );
-  }
-
-  void _updateRating(int? rating) {
-    setState(() => _rating = rating);
-    widget.onRatingChanged(rating);
-  }
-
-  Future<void> _editNotes() async {
-    final notes = await Navigator.of(context).push<String>(
-      MaterialPageRoute<String>(
-        builder: (context) => GameNotesScreen(initialNotes: _notes),
-      ),
-    );
-    if (!mounted || notes == null) {
+    if (!mounted || shouldRemove != true) {
       return;
     } else {
-      setState(() => _notes = notes);
-      widget.onNotesChanged(notes);
+      setState(() => _isSaving = true);
+      final removed = await widget.onRemoveGame(_game);
+      if (removed && mounted) {
+        Navigator.of(context).pop();
+      } else if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
+  }
+
+  void _editNotes() {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => GameNotesScreen(
+          initialNotes: _game.notes,
+          onSave: (notes) => _saveGame(
+            _game.copyWith(
+              status: _game.status,
+              rating: _game.rating,
+              notes: notes,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

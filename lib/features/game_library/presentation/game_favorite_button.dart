@@ -1,44 +1,22 @@
 import 'package:flutter/material.dart';
 
-class GameFavoriteButton extends StatefulWidget {
+class GameFavoriteButton extends StatelessWidget {
   const GameFavoriteButton({
     super.key,
     required this.isFavorite,
+    required this.isSaving,
     required this.onChanged,
   });
 
   final bool isFavorite;
+  final bool isSaving;
   final ValueChanged<bool> onChanged;
-
-  @override
-  State<GameFavoriteButton> createState() => _GameFavoriteButtonState();
-}
-
-class _GameFavoriteButtonState extends State<GameFavoriteButton> {
-  late bool _isFavorite;
-
-  @override
-  void initState() {
-    super.initState();
-    _isFavorite = widget.isFavorite;
-  }
-
-  void _toggle() {
-    bool favorite;
-    if (_isFavorite) {
-      favorite = false;
-    } else {
-      favorite = true;
-    }
-    setState(() => _isFavorite = favorite);
-    widget.onChanged(favorite);
-  }
 
   @override
   Widget build(BuildContext context) {
     IconData icon;
     String tooltip;
-    if (_isFavorite) {
+    if (isFavorite) {
       icon = Icons.favorite;
       tooltip = 'Remove from favorites';
     } else {
@@ -47,7 +25,7 @@ class _GameFavoriteButtonState extends State<GameFavoriteButton> {
     }
     return IconButton(
       tooltip: tooltip,
-      onPressed: _toggle,
+      onPressed: isSaving ? null : () => onChanged(!isFavorite),
       icon: Icon(icon, color: Theme.of(context).colorScheme.primary),
     );
   }
