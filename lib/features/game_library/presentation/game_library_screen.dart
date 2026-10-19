@@ -80,12 +80,36 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
     });
   }
 
-  void _openGame(Game game) {
+  void _openGame(Game game, List<Game> games) {
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (context) => GameDetailsScreen(game: game),
+        builder: (context) => GameDetailsScreen(
+          game: game,
+          onStatusChanged: (status) => _setGameStatus(games, game.id, status),
+        ),
       ),
     );
+  }
+
+  void _setGameStatus(List<Game> games, String gameId, GameStatus status) {
+    final gameIndex = games.indexWhere((game) => game.id == gameId);
+    if (gameIndex < 0) {
+      return;
+    } else {
+      setState(() {
+        final game = games[gameIndex];
+        games[gameIndex] = Game(
+          id: game.id,
+          name: game.name,
+          primaryGenre: game.primaryGenre,
+          platform: game.platform,
+          status: status,
+          isSample: game.isSample,
+          artworkUrl: game.artworkUrl,
+          playtimeMinutes: game.playtimeMinutes,
+        );
+      });
+    }
   }
 
   @override
@@ -136,7 +160,7 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
       games: games,
       onAddGame: _addGame,
       onLoadSamples: _loadSamples,
-      onOpenGame: _openGame,
+      onOpenGame: (game) => _openGame(game, games),
     );
   }
 }

@@ -3,10 +3,28 @@ import 'package:flutter/material.dart';
 import '../models/game.dart';
 import 'game_artwork.dart';
 
-class GameDetailsScreen extends StatelessWidget {
-  const GameDetailsScreen({super.key, required this.game});
+class GameDetailsScreen extends StatefulWidget {
+  const GameDetailsScreen({
+    super.key,
+    required this.game,
+    required this.onStatusChanged,
+  });
 
   final Game game;
+  final ValueChanged<GameStatus> onStatusChanged;
+
+  @override
+  State<GameDetailsScreen> createState() => _GameDetailsScreenState();
+}
+
+class _GameDetailsScreenState extends State<GameDetailsScreen> {
+  late GameStatus _status;
+
+  @override
+  void initState() {
+    super.initState();
+    _status = widget.game.status;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +38,14 @@ class GameDetailsScreen extends StatelessWidget {
             children: [
               Align(
                 alignment: Alignment.centerLeft,
-                child: GameArtwork(imageUrl: game.artworkUrl),
+                child: GameArtwork(imageUrl: widget.game.artworkUrl),
               ),
               const SizedBox(height: 16),
-              Text(game.name, style: Theme.of(context).textTheme.headlineSmall),
-              if (game.isSample) ...[
+              Text(
+                widget.game.name,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              if (widget.game.isSample) ...[
                 const SizedBox(height: 8),
                 const Align(
                   alignment: Alignment.centerLeft,
@@ -38,14 +59,14 @@ class GameDetailsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _metadata(context, 'Genre', game.primaryGenre),
-                      _metadata(context, 'Platform', game.platform),
+                      _metadata(context, 'Genre', widget.game.primaryGenre),
+                      _metadata(context, 'Platform', widget.game.platform),
                       _metadata(
                         context,
                         'Playtime',
-                        _formatPlaytime(game.playtimeMinutes),
+                        _formatPlaytime(widget.game.playtimeMinutes),
                       ),
-                      _metadata(context, 'Personal status', game.status.label),
+                      _statusSelector(context),
                     ],
                   ),
                 ),
@@ -86,5 +107,31 @@ class GameDetailsScreen extends StatelessWidget {
         return '$hours hr $remainingMinutes min';
       }
     }
+  }
+
+  Widget _statusSelector(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<GameStatus>(
+        initialValue: _status,
+        decoration: const InputDecoration(labelText: 'Personal status'),
+        items: GameStatus.values
+            .map(
+              (status) => DropdownMenuItem<GameStatus>(
+                value: status,
+                child: Text(status.label),
+              ),
+            )
+            .toList(),
+        onChanged: (status) {
+          if (status == null) {
+            return;
+          } else {
+            setState(() => _status = status);
+            widget.onStatusChanged(status);
+          }
+        },
+      ),
+    );
   }
 }
