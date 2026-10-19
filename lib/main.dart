@@ -1,11 +1,36 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_theme.dart';
 import 'features/game_library/data/game_library_storage.dart';
 import 'features/game_library/presentation/game_backlog_navigation.dart';
 
-void main() {
-  runApp(const MyApp());
+const _appearancePreferenceKey = 'game_backlog.appearance_mode';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  var themeMode = ThemeMode.system;
+  try {
+    final savedMode = await SharedPreferencesAsync().getString(
+      _appearancePreferenceKey,
+    );
+    themeMode = _themeModeFromPreference(savedMode);
+  } catch (_) {
+    // Use the system theme if preferences cannot be read.
+  }
+  runApp(MyApp(themeMode: themeMode));
+}
+
+ThemeMode _themeModeFromPreference(String? value) {
+  if (value == 'light') {
+    return ThemeMode.light;
+  } else if (value == 'dark') {
+    return ThemeMode.dark;
+  } else {
+    return ThemeMode.system;
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -43,6 +68,20 @@ class _MyAppState extends State<MyApp> {
 
   void _changeThemeMode(ThemeMode mode) {
     setState(() => _themeMode = mode);
+    if (widget.home == null) {
+      unawaited(_saveThemeMode(mode));
+    }
+  }
+
+  Future<void> _saveThemeMode(ThemeMode mode) async {
+    try {
+      await SharedPreferencesAsync().setString(
+        _appearancePreferenceKey,
+        mode.name,
+      );
+    } catch (_) {
+      // The selected theme still applies until the app closes.
+    }
   }
 
   @override
