@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/sample_achievements.dart';
 import '../models/achievement.dart';
 import '../models/game.dart';
+import 'achievement_artwork.dart';
 
 class GameAchievementsEntry extends StatelessWidget {
   const GameAchievementsEntry({super.key, required this.game});
@@ -149,7 +150,7 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
   Widget _achievementTile(BuildContext context, Achievement achievement) {
     return Card(
       child: ListTile(
-        leading: Icon(_progressIcon(achievement.progress)),
+        leading: AchievementArtwork(imageUrl: achievement.artworkUrl),
         title: Text(achievement.name),
         subtitle: Column(
           mainAxisSize: MainAxisSize.min,
@@ -165,15 +166,5 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
         ),
       ),
     );
-  }
-
-  IconData _progressIcon(AchievementProgress progress) {
-    if (progress == AchievementProgress.unlocked) {
-      return Icons.check_circle_outline;
-    } else if (progress == AchievementProgress.locked) {
-      return Icons.lock_outline;
-    } else {
-      return Icons.help_outline;
-    }
   }
 }
