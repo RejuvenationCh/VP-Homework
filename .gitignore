@@ -52,12 +52,7 @@ app.*.map.json
 /.impeccable/
 
 # Private AFL notes and UI review screenshots
-/docs/afl/README.md
-/docs/afl/implementation-plan.md
-/docs/afl/progress.md
-/docs/afl/steam-import-design.md
-/docs/afl/ui-ux-plan.md
-/docs/afl/ui-screenshots/
+/docs/afl/
 /.playwright-mcp/
 
 # Local Cloudflare Worker secrets

@@ -12,6 +12,12 @@ Game Backlog is a Flutter coursework app for organizing a personal game library 
 - Dark, light, and system appearance
 - Development emulator and retained H2 media demonstrations
 
+## Requirements
+
+- Flutter SDK with Dart 3.13.3 or a compatible newer version
+- Chrome for the web version, or an Android device/emulator for Android
+- For Steam profile import: Node.js/npm, a Steam Web API key, and the local Cloudflare Worker
+
 ## Run the app
 
 ```sh
@@ -72,10 +78,9 @@ Open Settings, enter a public Steam profile URL, vanity name, or SteamID64, and 
 
 ![Settings screen](docs/screenshots/settings.png)
 
-## Project notes
+## Coursework documents
 
 - [Architecture](docs/structure.md)
 - [Week 5 reflection](docs/week05/reflection.md)
-- [Week 4 constraints and responsive evidence](docs/week04/constraints.md)
 
-Release APK: [download](releases/app-release.apk). It is a local build and still needs a clean-device installation check. No release has been published to GitHub.
+Release APK: [download](releases/app-release.apk). This local build still needs a clean-device installation check. No GitHub release has been published.
