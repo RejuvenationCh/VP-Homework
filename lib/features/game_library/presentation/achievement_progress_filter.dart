@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AchievementProgressFilter { all, unlocked, locked }
+enum AchievementProgressFilter { all, unlocked, locked, tracked }
 
 class AchievementProgressFilterSelector extends StatelessWidget {
   const AchievementProgressFilterSelector({
@@ -20,6 +20,7 @@ class AchievementProgressFilterSelector extends StatelessWidget {
         _chip(AchievementProgressFilter.all, 'All'),
         _chip(AchievementProgressFilter.unlocked, 'Unlocked'),
         _chip(AchievementProgressFilter.locked, 'Locked'),
+        _chip(AchievementProgressFilter.tracked, 'Tracked'),
       ],
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/achievement.dart';
 import '../models/game.dart';
+import 'achievement_no_results.dart';
 import 'achievement_progress_filter.dart';
 import 'achievement_tile.dart';
 
@@ -21,6 +22,7 @@ class AchievementList extends StatefulWidget {
 
 class _AchievementListState extends State<AchievementList> {
   final _searchController = TextEditingController();
+  final Set<String> _trackedAchievementIds = {};
   String _query = '';
   AchievementProgressFilter _progressFilter = AchievementProgressFilter.all;
 
@@ -33,7 +35,11 @@ class _AchievementListState extends State<AchievementList> {
   List<Achievement> _filteredAchievements() {
     final query = _query.trim().toLowerCase();
     return widget.achievements.where((achievement) {
-      if (_progressFilter == AchievementProgressFilter.unlocked) {
+      if (_progressFilter == AchievementProgressFilter.tracked) {
+        if (!_trackedAchievementIds.contains(achievement.id)) {
+          return false;
+        }
+      } else if (_progressFilter == AchievementProgressFilter.unlocked) {
         if (achievement.progress != AchievementProgress.unlocked) {
           return false;
         }
@@ -54,6 +60,16 @@ class _AchievementListState extends State<AchievementList> {
         }
       }
     }).toList();
+  }
+
+  void _toggleTracked(Achievement achievement) {
+    setState(() {
+      if (_trackedAchievementIds.contains(achievement.id)) {
+        _trackedAchievementIds.remove(achievement.id);
+      } else {
+        _trackedAchievementIds.add(achievement.id);
+      }
+    });
   }
 
   void _clearSearch() {
@@ -89,9 +105,18 @@ class _AchievementListState extends State<AchievementList> {
         } else if (index == 2) {
           return _searchField();
         } else if (achievements.isEmpty) {
-          return _noResults(context);
+          return AchievementNoResults(
+            showClearSearch: _query.trim().isNotEmpty,
+            onClearSearch: _clearSearch,
+            onShowAll: _showAllAchievements,
+          );
         } else {
-          return AchievementTile(achievement: achievements[index - 3]);
+          final achievement = achievements[index - 3];
+          return AchievementTile(
+            achievement: achievement,
+            isTracked: _trackedAchievementIds.contains(achievement.id),
+            onTrackChanged: () => _toggleTracked(achievement),
+          );
         }
       },
     );
@@ -153,31 +178,5 @@ class _AchievementListState extends State<AchievementList> {
     } else {
       return null;
     }
-  }
-
-  Widget _noResults(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.search_off,
-            size: 48,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(height: 16),
-          const Text('No achievements found.'),
-          TextButton(
-            onPressed: _clearSearch,
-            child: const Text('Clear search'),
-          ),
-          TextButton(
-            onPressed: _showAllAchievements,
-            child: const Text('Show all achievements'),
-          ),
-        ],
-      ),
-    );
   }
 }
