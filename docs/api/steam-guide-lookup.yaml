@@ -1,0 +1,172 @@
+openapi: 3.1.0
+info:
+  title: Steam achievement guide lookup
+  version: 1.0.0
+  description: Checks Steam Community guide search results without returning guide content.
+  x-cors:
+    allow-origin: '*'
+    allow-methods: [GET, OPTIONS]
+    allow-headers: [Accept, Content-Type]
+    allow-credentials: false
+    expose-headers: [Retry-After]
+  x-rate-limit:
+    limit: 30
+    period-seconds: 60
+    key: caller IP address
+    exceeded-response: 429 with Retry-After: 60
+servers:
+  - url: http://127.0.0.1:8787
+    description: Local Wrangler development server
+  - url: https://{worker_host}
+    description: Deployed Worker. Set STEAM_GUIDE_API_BASE_URL in the Flutter build.
+    variables:
+      worker_host:
+        default: replace-with-deployed-worker-host
+paths:
+  /v1/steam/guides:
+    x-routing-errors:
+      '404':
+        description: An unknown path returns not_found. Flutter must treat this as a route or configuration error, not as an empty guide search.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteNotFoundError'
+      '405':
+        description: Any method other than GET or OPTIONS returns method_not_allowed.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MethodNotAllowedError'
+    options:
+      operationId: steamGuideCorsPreflight
+      summary: Handle browser CORS preflight
+      security: []
+      responses:
+        '204':
+          description: Preflight accepted. Credentials are not used.
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+                const: '*'
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                const: 'GET, OPTIONS'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                const: 'Accept, Content-Type'
+            Access-Control-Max-Age:
+              schema:
+                type: integer
+                const: 600
+    get:
+      operationId: findSteamAchievementGuide
+      summary: Find a Steam Community guide for an achievement
+      description: Search is scoped to app_id and search_text by Steam Community. The Worker validates the first-page range and checks at most 30 result cards, requiring the parsed card count to match Steam's page summary. It trims search_text, applies Unicode NFC normalization and lowercase, then splits on any character other than a Unicode letter or number. Diacritics are kept. Every resulting whole token must appear in the combined title and short description of one card. A match does not verify guide contents. guide_not_found means the valid first page was fully readable and none matched this heuristic, not proof that no relevant guide exists. If no match can be confirmed and the page contains unreadable cards or unsupported HTML entities, the Worker returns 502.
+      security: []
+      parameters:
+        - name: app_id
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^[1-9][0-9]{0,9}$'
+          description: Steam application ID.
+        - name: search_text
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 120
+          description: Achievement name used to search the game's guides. It must include at least one Unicode letter or number after tokenization.
+      responses:
+        '200':
+          description: At least one of the first 30 guide result cards matches all whole search tokens.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [found, guide_url]
+                properties:
+                  found:
+                    type: boolean
+                    const: true
+                  guide_url:
+                    type: string
+                    format: uri
+                    pattern: '^https://steamcommunity\.com/app/[1-9][0-9]{0,9}/guides/.*$'
+        '400':
+          description: Invalid app ID or search text, including text with no Unicode letter or number tokens.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: All cards on the first Steam results page were readable, and none matched all whole search tokens. This heuristic does not prove that no relevant guide exists. Only guide_not_found means the app should show its in-app no-guide page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuideNotFoundError'
+        '429':
+          description: Rate limit exceeded. Retry after 60 seconds.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                const: 60
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: Steam could not be reached or its search response could not be read well enough to confirm whether a guide matched.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    GuideNotFoundError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          const: guide_not_found
+    RouteNotFoundError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          const: not_found
+    MethodNotAllowedError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          const: method_not_allowed
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum:
+            - invalid_request
+            - method_not_allowed
+            - not_found
+            - guide_not_found
+            - rate_limited
+            - steam_unavailable
+            - internal_error

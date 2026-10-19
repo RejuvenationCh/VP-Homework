@@ -14,6 +14,7 @@ const sampleGames = [
     platform: 'PC',
     status: GameStatus.backlog,
     playtimeMinutes: 125,
+    steamAppId: '218620',
     artworkUrl: 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/218620/c44949287e8ffa2518f01b5033b8431dd0f984e4/header.jpg?t=1789555107',
   ),
   Game(
@@ -23,6 +24,7 @@ const sampleGames = [
     primaryGenre: 'Adventure',
     platform: 'PC',
     status: GameStatus.playing,
+    steamAppId: '105600',
     artworkUrl: 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/105600/header.jpg?t=1769844435',
   ),
   Game(
@@ -32,6 +34,7 @@ const sampleGames = [
     primaryGenre: 'Shooter',
     platform: 'PC',
     status: GameStatus.finished,
+    steamAppId: '730',
     artworkUrl: 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/730/162664aa5da85f418105350c5d67ca565f6c3713/header.jpg?t=1791824795',
   ),
   Game(
@@ -41,6 +44,7 @@ const sampleGames = [
     primaryGenre: 'Racing',
     platform: 'PC',
     status: GameStatus.dropped,
+    steamAppId: '1293830',
     artworkUrl: 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1293830/header.jpg?t=1734336342',
   ),
   Game(
@@ -50,6 +54,7 @@ const sampleGames = [
     primaryGenre: 'Racing',
     platform: 'PC',
     status: GameStatus.backlog,
+    steamAppId: '1551360',
     artworkUrl: 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1551360/header.jpg?t=1788546569',
   ),
 ];

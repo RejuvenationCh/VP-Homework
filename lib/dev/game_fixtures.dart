@@ -30,6 +30,7 @@ enum GameDemoData {
           status: game.status,
           isSample: true,
           artworkUrl: game.artworkUrl,
+          steamAppId: game.steamAppId,
         ),
       ];
     } else if (this == GameDemoData.empty) {
@@ -45,6 +46,7 @@ enum GameDemoData {
           status: game.status,
           isSample: true,
           artworkUrl: game.artworkUrl,
+          steamAppId: game.steamAppId,
         );
       });
     } else {

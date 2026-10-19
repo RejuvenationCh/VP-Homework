@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../models/achievement.dart';
+import '../models/game.dart';
 import 'achievement_artwork.dart';
+import 'achievement_guide_button.dart';
 import 'achievement_progress_widget.dart';
 
 class AchievementTile extends StatelessWidget {
   const AchievementTile({
     super.key,
+    required this.game,
     required this.achievement,
     required this.isTracked,
     required this.isSaving,
@@ -15,6 +18,7 @@ class AchievementTile extends StatelessWidget {
     required this.onNotesTap,
   });
 
+  final Game game;
   final Achievement achievement;
   final bool isTracked;
   final bool isSaving;
@@ -67,7 +71,8 @@ class AchievementTile extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 4),
-              Row(
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
                 children: [
                   Tooltip(
                     message: isTracked
@@ -82,7 +87,11 @@ class AchievementTile extends StatelessWidget {
                       label: Text(isTracked ? 'Tracked' : 'Track'),
                     ),
                   ),
-                  const Spacer(),
+                  if (game.steamAppId != null)
+                    AchievementGuideButton(
+                      game: game,
+                      achievement: achievement,
+                    ),
                   IconButton(
                     tooltip: notesTooltip,
                     onPressed: isSaving ? null : onNotesTap,

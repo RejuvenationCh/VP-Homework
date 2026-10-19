@@ -20,6 +20,7 @@ class Game {
     this.isFavorite = false,
     this.isPlayNext = false,
     this.artworkUrl,
+    this.steamAppId,
     this.playtimeMinutes,
     this.rating,
     this.notes = '',
@@ -34,6 +35,7 @@ class Game {
   final bool isFavorite;
   final bool isPlayNext;
   final String? artworkUrl;
+  final String? steamAppId;
   final int? playtimeMinutes;
   final int? rating;
   final String notes;
@@ -96,6 +98,7 @@ class Game {
       isFavorite: updatedFavorite,
       isPlayNext: updatedPlayNext,
       artworkUrl: artworkUrl,
+      steamAppId: steamAppId,
       playtimeMinutes: playtimeMinutes,
       rating: rating,
       notes: notes,

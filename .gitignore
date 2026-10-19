@@ -55,6 +55,7 @@ app.*.map.json
 /docs/afl/README.md
 /docs/afl/implementation-plan.md
 /docs/afl/progress.md
+/docs/afl/steam-import-design.md
 /docs/afl/ui-ux-plan.md
 /docs/afl/ui-screenshots/
 /.playwright-mcp/

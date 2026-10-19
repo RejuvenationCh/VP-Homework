@@ -1,0 +1,15 @@
+{
+  "name": "game-backlog-steam-guides",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-19",
+  "ratelimits": [
+    {
+      "name": "STEAM_GUIDE_RATE_LIMIT",
+      "namespace_id": "8076132845",
+      "simple": {
+        "limit": 30,
+        "period": 60
+      }
+    }
+  ]
+}
