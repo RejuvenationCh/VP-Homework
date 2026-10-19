@@ -25,7 +25,7 @@ String libraryGenre(Game game) {
   if (game.primaryGenre.trim().isEmpty) {
     return 'Unsorted';
   } else {
-    return game.primaryGenre;
+    return game.primaryGenre.trim();
   }
 }
 

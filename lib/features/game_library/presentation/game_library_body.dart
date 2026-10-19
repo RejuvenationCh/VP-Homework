@@ -13,6 +13,7 @@ class GameLibraryBody extends StatelessWidget {
     required this.onAddGame,
     required this.onLoadSamples,
     required this.onOpenGame,
+    this.genreRequest,
   });
 
   final Future<List<Game>> games;
@@ -22,6 +23,7 @@ class GameLibraryBody extends StatelessWidget {
   final Future<void> Function(List<Game>) onAddGame;
   final Future<void> Function(List<Game>) onLoadSamples;
   final ValueChanged<Game> onOpenGame;
+  final String? genreRequest;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +55,7 @@ class GameLibraryBody extends StatelessWidget {
             onAddGame: onAddGame,
             onLoadSamples: onLoadSamples,
             onOpenGame: (game) => onOpenGame(game),
+            genreRequest: genreRequest,
           );
         },
       ),

@@ -9,10 +9,12 @@ class GameOverviewScreen extends StatefulWidget {
     super.key,
     required this.storage,
     required this.refreshKey,
+    required this.onGenreSelected,
   });
 
   final GameLibraryStorage storage;
   final int refreshKey;
+  final ValueChanged<String> onGenreSelected;
 
   @override
   State<GameOverviewScreen> createState() => _GameOverviewScreenState();
@@ -106,7 +108,10 @@ class _GameOverviewScreenState extends State<GameOverviewScreen> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GenreBubbleMap(counts: counts),
+          child: GenreBubbleMap(
+            counts: counts,
+            onSelected: widget.onGenreSelected,
+          ),
         ),
       ],
     );

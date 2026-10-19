@@ -16,44 +16,65 @@ class GameBacklogNavigation extends StatefulWidget {
 class _GameBacklogNavigationState extends State<GameBacklogNavigation> {
   int _selectedIndex = 1;
   int _overviewRefreshKey = 0;
+  String? _genreRequest;
 
   void _selectDestination(int index) {
     setState(() {
       _selectedIndex = index;
       if (index == 0) {
         _overviewRefreshKey++;
+        _genreRequest = null;
       }
+    });
+  }
+
+  void _openGenre(String genre) {
+    setState(() {
+      _genreRequest = genre;
+      _selectedIndex = 1;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          GameOverviewScreen(
-            storage: widget.storage,
-            refreshKey: _overviewRefreshKey,
-          ),
-          GameLibraryScreen(storage: widget.storage),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _selectDestination,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Overview',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.videogame_asset_outlined),
-            selectedIcon: Icon(Icons.videogame_asset),
-            label: 'Library',
-          ),
-        ],
+    return PopScope(
+      canPop: _selectedIndex != 1 || _genreRequest == null,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _selectedIndex == 1 && _genreRequest != null) {
+          _selectDestination(0);
+        }
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            GameOverviewScreen(
+              storage: widget.storage,
+              refreshKey: _overviewRefreshKey,
+              onGenreSelected: _openGenre,
+            ),
+            GameLibraryScreen(
+              storage: widget.storage,
+              genreRequest: _genreRequest,
+            ),
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: _selectDestination,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: 'Overview',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.videogame_asset_outlined),
+              selectedIcon: Icon(Icons.videogame_asset),
+              label: 'Library',
+            ),
+          ],
+        ),
       ),
     );
   }

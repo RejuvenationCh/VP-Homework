@@ -3,9 +3,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class GenreBubbleMap extends StatelessWidget {
-  const GenreBubbleMap({super.key, required this.counts});
+  const GenreBubbleMap({
+    super.key,
+    required this.counts,
+    required this.onSelected,
+  });
 
   final Map<String, int> counts;
+  final ValueChanged<String> onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +81,7 @@ class GenreBubbleMap extends StatelessWidget {
           diameter: diameter,
           fill: fills[colorIndex],
           ink: inks[colorIndex],
+          onTap: () => onSelected(entry.key),
         ),
       );
     }
@@ -96,6 +102,7 @@ class _GenreBubble extends StatelessWidget {
     required this.diameter,
     required this.fill,
     required this.ink,
+    required this.onTap,
   });
 
   final String genre;
@@ -103,6 +110,7 @@ class _GenreBubble extends StatelessWidget {
   final double diameter;
   final Color fill;
   final Color ink;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +122,8 @@ class _GenreBubble extends StatelessWidget {
     }
     return Semantics(
       label: '$genre, $countLabel',
+      button: true,
+      onTap: onTap,
       child: ExcludeSemantics(
         child: Tooltip(
           message: '$genre · $countLabel',
@@ -125,29 +135,33 @@ class _GenreBubble extends StatelessWidget {
                 side: BorderSide(color: ink.withValues(alpha: .25)),
               ),
               clipBehavior: Clip.antiAlias,
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.all(diameter * .08),
-                  child: SizedBox(
-                    width: diameter * .84,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          genre,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(color: ink),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '$count',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: ink),
-                        ),
-                      ],
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onTap,
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(diameter * .08),
+                    child: SizedBox(
+                      width: diameter * .84,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            genre,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(color: ink),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$count',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: ink),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

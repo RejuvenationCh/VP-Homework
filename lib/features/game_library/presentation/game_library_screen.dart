@@ -8,10 +8,16 @@ import 'game_form_screen.dart';
 import 'game_library_body.dart';
 
 class GameLibraryScreen extends StatefulWidget {
-  const GameLibraryScreen({super.key, this.loadGames, this.storage});
+  const GameLibraryScreen({
+    super.key,
+    this.loadGames,
+    this.storage,
+    this.genreRequest,
+  });
 
   final Future<List<Game>> Function()? loadGames;
   final GameLibraryStorage? storage;
+  final String? genreRequest;
 
   @override
   State<GameLibraryScreen> createState() => _GameLibraryScreenState();
@@ -56,11 +62,7 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
     }
   }
 
-  void _retry() {
-    setState(() {
-      _games = _loadGames();
-    });
-  }
+  void _retry() => setState(() => _games = _loadGames());
 
   Future<void> _addGame(List<Game> games) async {
     final draft = Game(
@@ -164,11 +166,9 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
     }
   }
 
-  void _showSaveMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-  }
-
+  void _showSaveMessage(String message) =>
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
   List<Game> _currentGames() {
     final games = _libraryGames;
     if (games == null) {
@@ -186,6 +186,7 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
         games: _games,
         currentGames: _libraryGames,
         hasSavedData: widget.storage != null,
+        genreRequest: widget.genreRequest,
         onRetry: _retry,
         onAddGame: _addGame,
         onLoadSamples: _loadSamples,

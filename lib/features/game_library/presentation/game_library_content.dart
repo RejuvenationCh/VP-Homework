@@ -13,12 +13,14 @@ class GameLibraryContent extends StatefulWidget {
     required this.onAddGame,
     required this.onLoadSamples,
     required this.onOpenGame,
+    this.genreRequest,
   });
 
   final List<Game> games;
   final Future<void> Function(List<Game> games) onAddGame;
   final Future<void> Function(List<Game> games) onLoadSamples;
   final ValueChanged<Game> onOpenGame;
+  final String? genreRequest;
 
   @override
   State<GameLibraryContent> createState() => _GameLibraryContentState();
@@ -32,6 +34,21 @@ class _GameLibraryContentState extends State<GameLibraryContent> {
   GameStatus? _selectedStatus;
   bool _favoritesOnly = false;
   GameLibrarySort _sort = GameLibrarySort.nameAscending;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedGenre = widget.genreRequest;
+  }
+
+  @override
+  void didUpdateWidget(GameLibraryContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.genreRequest != null &&
+        oldWidget.genreRequest != widget.genreRequest) {
+      _selectedGenre = widget.genreRequest;
+    }
+  }
 
   @override
   void dispose() {
