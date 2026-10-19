@@ -2,6 +2,9 @@
   "name": "game-backlog-steam-guides",
   "main": "src/index.js",
   "compatibility_date": "2026-10-19",
+  "secrets": {
+    "required": ["STEAM_API_KEY"]
+  },
   "ratelimits": [
     {
       "name": "STEAM_GUIDE_RATE_LIMIT",
