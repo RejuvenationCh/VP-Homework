@@ -94,11 +94,37 @@ class _GameOverviewScreenState extends State<GameOverviewScreen> {
       }
     }
     final genres = counts.keys.toList()..sort();
-    final rows = <Widget>[];
+    final bubbles = <Widget>[];
+    final colors = Theme.of(context).colorScheme;
+    final maxBubbleWidth = MediaQuery.sizeOf(context).width - 64;
     for (final genre in genres) {
       final count = counts[genre];
       if (count != null) {
-        rows.add(ListTile(title: Text(genre), trailing: Text('$count')));
+        bubbles.add(
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxBubbleWidth),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: colors.secondaryContainer,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 12,
+                    backgroundColor: colors.primary,
+                    foregroundColor: colors.onPrimary,
+                    child: Text('$count'),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text(genre, softWrap: true)),
+                ],
+              ),
+            ),
+          ),
+        );
       }
     }
     return ListView(
@@ -111,7 +137,10 @@ class _GameOverviewScreenState extends State<GameOverviewScreen> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
-        ...rows,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Wrap(spacing: 8, runSpacing: 4, children: bubbles),
+        ),
       ],
     );
   }
