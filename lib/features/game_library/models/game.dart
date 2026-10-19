@@ -18,6 +18,7 @@ class Game {
     required this.status,
     this.isSample = false,
     this.artworkUrl,
+    this.playtimeMinutes,
   });
 
   // Game info is separate from the personal status below
@@ -27,6 +28,7 @@ class Game {
   final String platform;
   final bool isSample;
   final String? artworkUrl;
+  final int? playtimeMinutes;
 
   // User chooses the status, not based on playtime or achievements
   final GameStatus status;

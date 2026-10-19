@@ -78,6 +78,7 @@ void main() {
     expect(find.text('No games yet'), findsOneWidget);
     await tester.tap(find.text('Load sample games'));
     await tester.pumpAndSettle();
+    await revealLibraryGame(tester, find.text('PAYDAY 2'));
     expect(find.text('PAYDAY 2'), findsOneWidget);
     expect(
       tester
@@ -178,6 +179,7 @@ void main() {
     );
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
+    await revealLibraryGame(tester, find.text('PAYDAY 2'));
     expect(find.text('PAYDAY 2'), findsOneWidget);
     expect(find.text('Could not load games'), findsNothing);
     await revealPanel(tester, find.text('Reset demo'));
