@@ -83,7 +83,7 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
                 onChanged: _saveGame,
                 onEditNotes: _editNotes,
               ),
-              if (_game.isSample) GameAchievementsEntry(game: _game),
+              GameAchievementsEntry(game: _game),
             ],
           ),
         ),

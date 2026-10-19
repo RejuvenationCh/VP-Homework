@@ -26,27 +26,120 @@ class GameAchievementsEntry extends StatelessWidget {
   }
 }
 
-class GameAchievementsScreen extends StatelessWidget {
+class GameAchievementsScreen extends StatefulWidget {
   const GameAchievementsScreen({super.key, required this.game});
 
   final Game game;
 
   @override
+  State<GameAchievementsScreen> createState() => _GameAchievementsScreenState();
+}
+
+class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
+  late Future<List<Achievement>> _achievements;
+
+  @override
+  void initState() {
+    super.initState();
+    _achievements = _loadAchievements();
+  }
+
+  Future<List<Achievement>> _loadAchievements() async {
+    return achievementsForGame(widget.game);
+  }
+
+  void _retry() {
+    setState(() {
+      _achievements = _loadAchievements();
+    });
+  }
+
+  void _back() {
+    Navigator.of(context).pop();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final achievements = achievementsForGame(game);
     return Scaffold(
       appBar: AppBar(title: const Text('Achievements')),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: FutureBuilder<List<Achievement>>(
+          future: _achievements,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return _unavailable(context);
+            } else {
+              final achievements = snapshot.data;
+              if (achievements == null || achievements.isEmpty) {
+                return _empty(context);
+              } else {
+                return _achievementList(context, achievements);
+              }
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _achievementList(
+    BuildContext context,
+    List<Achievement> achievements,
+  ) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(widget.game.name, style: Theme.of(context).textTheme.titleLarge),
+        const Align(
+          alignment: Alignment.centerLeft,
+          child: Chip(label: Text('Sample data')),
+        ),
+        for (final achievement in achievements)
+          _achievementTile(context, achievement),
+      ],
+    );
+  }
+
+  Widget _empty(BuildContext context) {
+    return _message(
+      context,
+      icon: Icons.emoji_events_outlined,
+      message: 'No achievements available for this game.',
+      actions: [FilledButton(onPressed: _back, child: const Text('Back'))],
+    );
+  }
+
+  Widget _unavailable(BuildContext context) {
+    return _message(
+      context,
+      icon: Icons.cloud_off_outlined,
+      message: 'Achievements are unavailable.',
+      actions: [
+        FilledButton(onPressed: _retry, child: const Text('Retry')),
+        TextButton(onPressed: _back, child: const Text('Back')),
+      ],
+    );
+  }
+
+  Widget _message(
+    BuildContext context, {
+    required IconData icon,
+    required String message,
+    required List<Widget> actions,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(game.name, style: Theme.of(context).textTheme.titleLarge),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Chip(label: Text('Sample data')),
-            ),
-            for (final achievement in achievements)
-              _achievementTile(context, achievement),
+            Icon(icon, size: 48),
+            const SizedBox(height: 16),
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            Wrap(spacing: 8, children: actions),
           ],
         ),
       ),
