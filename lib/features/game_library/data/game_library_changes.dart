@@ -29,6 +29,16 @@ List<Game>? withUpdatedGame(List<Game> games, Game updated) {
     return null;
   } else {
     final result = List<Game>.of(games);
+    for (var gameIndex = 0; gameIndex < result.length; gameIndex++) {
+      if (updated.isPlayNext && gameIndex != index) {
+        result[gameIndex] = result[gameIndex].copyWith(
+          status: result[gameIndex].status,
+          rating: result[gameIndex].rating,
+          notes: result[gameIndex].notes,
+          isPlayNext: false,
+        );
+      }
+    }
     result[index] = updated;
     return result;
   }

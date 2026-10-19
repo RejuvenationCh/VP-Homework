@@ -34,6 +34,21 @@ class GameDetailsInfoCard extends StatelessWidget {
               _formatPlaytime(game.playtimeMinutes),
             ),
             _statusSelector(),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Play next'),
+              value: game.isPlayNext,
+              onChanged: isSaving
+                  ? null
+                  : (value) => onChanged(
+                      game.copyWith(
+                        status: game.status,
+                        rating: game.rating,
+                        notes: game.notes,
+                        isPlayNext: value,
+                      ),
+                    ),
+            ),
             GameRatingControl(
               rating: game.rating,
               onChanged: isSaving ? null : _updateRating,

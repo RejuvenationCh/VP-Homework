@@ -15,7 +15,7 @@ class GameBacklogNavigation extends StatefulWidget {
 }
 
 class _GameBacklogNavigationState extends State<GameBacklogNavigation> {
-  int _selectedIndex = 1;
+  int _selectedIndex = 0;
   int _overviewRefreshKey = 0;
   String? _genreRequest;
   bool _isOpeningOverviewGame = false;

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../data/game_library_storage.dart';
 import '../models/game.dart';
 import 'genre_bubble_map.dart';
-import 'game_tile.dart';
 import 'overview_library_summary.dart';
+import 'overview_game_sections.dart';
 
 class GameOverviewScreen extends StatefulWidget {
   const GameOverviewScreen({
@@ -134,40 +134,11 @@ class _GameOverviewScreenState extends State<GameOverviewScreen> {
             onSelected: widget.onGenreSelected,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-          child: Text(
-            'Currently playing',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+        OverviewGameSections(
+          games: games,
+          onGameSelected: widget.onGameSelected,
         ),
-        ..._playingTiles(games),
       ],
     );
-  }
-
-  List<Widget> _playingTiles(List<Game> games) {
-    final playingGames = games
-        .where((game) => game.status == GameStatus.playing)
-        .toList();
-    if (playingGames.isEmpty) {
-      return const [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text('No games currently playing'),
-        ),
-      ];
-    } else {
-      return [
-        for (final game in playingGames)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: GameTile(
-              game: game,
-              onTap: () => widget.onGameSelected(game),
-            ),
-          ),
-      ];
-    }
   }
 }
