@@ -159,7 +159,7 @@ class _AchievementListState extends State<AchievementList> {
       itemCount: itemCount,
       itemBuilder: (context, index) {
         if (index == 0) {
-          return AchievementListHeader(gameName: widget.game.name);
+          return AchievementListHeader(game: widget.game);
         } else if (index == 1) {
           return AchievementSearchField(
             controller: _searchController,

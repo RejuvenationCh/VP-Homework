@@ -1,67 +1,81 @@
-# Media Cleaner
+# Game Backlog
 
-Flutter coursework app with a storage overview and a file manager.
-Files are mock data. Delete and Offload remove them from memory until the app restarts.
+Game Backlog is a Flutter coursework app for organizing a personal game library and working toward Steam achievements. Local game details, ratings, favorites, achievement tracking, and notes are stored with SQLite through Drift. A public Steam profile can be selected in Settings to import visible games and read achievement progress on demand.
 
-## Normal mode
+## Features
+
+- Overview with genre bubbles and library counts
+- Library search, filters, sorting, favorites, and game details
+- Personal status, rating, play-next, and notes for each game
+- Steam profile import and playtime through the local Worker
+- On-demand achievement definitions and unlock state, with tracking, notes, filters, and guide links
+- Dark, light, and system appearance
+- Development emulator and retained H2 media demonstrations
+
+## Run the app
 
 ```sh
+flutter pub get
 flutter run
 ```
 
-This uses `lib/main.dart`. To run it in Chrome:
+For Chrome:
 
 ```sh
 flutter run -d chrome
 ```
 
-## Emulator mode
+## Enable Steam import
 
-Runs the app inside a phone or tablet frame, adapted from lab04.
-
-```sh
-flutter run -d chrome -t lib/main_emulator.dart
-```
-
-Controls:
-
-- Screen: storage overview or file manager
-- Width: 320, 430, or 800 dp
-- Orientation: portrait or landscape
-- Data: normal, 200-character filename, zero items, or 500 items
-- Keyboard overlay, dark mode, and notch/gesture bar
-- Reset demo
-
-The keyboard toggle simulates the space taken up by a keyboard.
-Rotation and theme changes keep the current preview state.
-
-## Emulator
-
-List the available emulators, launch one, then run the app:
+Steam import needs the local Cloudflare Worker and a Steam Web API key. Keep the key in `workers/steam-guides/.dev.vars`; do not put it in Flutter code or the browser.
 
 ```sh
-flutter emulators
-flutter emulators --launch <emulator-id>
-flutter devices
-flutter run -d <device-id>
+cd workers/steam-guides
+npx wrangler@4 dev --ip 127.0.0.1 --port 8787
 ```
 
-## H2 constraints
+In a second terminal, run Flutter with the local Worker URL:
 
-Run emulator mode, then choose a case under H2 errors on the file manager:
+```sh
+flutter run -d chrome --dart-define=STEAM_GUIDE_API_BASE_URL=http://127.0.0.1:8787
+```
 
-- Filename width: removes the width limit from a real file tile's name
-- Tile height: reduces the real grid cells to 64 dp
-- Selection bar: forces the selection summary and buttons onto one row
+Open Settings, enter a public Steam profile URL, vanity name, or SteamID64, and select **Import / refresh games**. Imported games appear in Library. Open a game and choose **View achievements**. The app reads Steam when asked; changes are not live-pushed. The Worker has not been deployed. Public profile data does not verify account ownership.
 
-Turn Show fix off to see the error, then on to restore the layout. These
-controls change the actual file-manager screen. You can change size and
-orientation while comparing. Off clears the H2 case.
+## Screens
 
-Use debug mode to see the overflow markers.
+### Overview
 
-Screenshots, explanations, and fixes: [constraints.md](docs/week04/constraints.md).
+![Overview screen](docs/screenshots/overview.png)
 
-## H1 responsive checks
+### Library
 
-Results and fixes: [responsive-matrix.md](docs/week04/responsive-matrix.md).
+![Library screen](docs/screenshots/library.png)
+
+### Game details
+
+![Game details screen](docs/screenshots/details.png)
+
+### Add or edit a game
+
+![Add and edit game form](docs/screenshots/add-edit-game.png)
+
+### Achievements
+
+![Achievements screen](docs/screenshots/achievements.png)
+
+### Achievement notes
+
+![Achievement notes screen](docs/screenshots/notes.png)
+
+### Settings
+
+![Settings screen](docs/screenshots/settings.png)
+
+## Project notes
+
+- [Architecture](docs/structure.md)
+- [Week 5 reflection](docs/week05/reflection.md)
+- [Week 4 constraints and responsive evidence](docs/week04/constraints.md)
+
+Release APK: [download](releases/app-release.apk). It is a local build and still needs a clean-device installation check. No release has been published to GitHub.

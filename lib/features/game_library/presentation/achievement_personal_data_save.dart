@@ -28,6 +28,7 @@ Future<bool> saveAchievementPersonalData({
           achievement: record.achievement,
           isTracked: trackedAchievementIds.contains(achievementId),
           notes: notes,
+          progressProfileId: record.progressProfileId,
         ),
       );
     }

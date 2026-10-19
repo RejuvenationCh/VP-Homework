@@ -14,6 +14,7 @@ Map<String, Object?> achievementRecordToJson(AchievementRecord record) {
     'progress': achievement.progress.name,
     'isTracked': record.isTracked,
     'notes': record.notes,
+    'progressProfileId': record.progressProfileId,
   };
 }
 
@@ -28,6 +29,7 @@ AchievementRecord achievementRecordFromJson(Map<String, dynamic> json) {
   final progressName = json['progress'];
   final isTracked = json['isTracked'];
   final notes = json['notes'];
+  final profileId = json['progressProfileId'];
 
   if (gameId is! String ||
       id is! String ||
@@ -38,7 +40,8 @@ AchievementRecord achievementRecordFromJson(Map<String, dynamic> json) {
       (totalProgress != null && totalProgress is! int) ||
       progressName is! String ||
       isTracked is! bool ||
-      notes is! String) {
+      notes is! String ||
+      (profileId != null && profileId is! String)) {
     throw const FormatException('Saved achievement entry is invalid.');
   }
 
@@ -66,5 +69,6 @@ AchievementRecord achievementRecordFromJson(Map<String, dynamic> json) {
     achievement: achievement,
     isTracked: isTracked,
     notes: notes,
+    progressProfileId: profileId as String?,
   );
 }

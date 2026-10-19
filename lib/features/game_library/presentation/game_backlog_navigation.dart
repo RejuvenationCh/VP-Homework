@@ -57,6 +57,11 @@ class _GameBacklogNavigationState extends State<GameBacklogNavigation> {
     _isOpeningOverviewGame = false;
   }
 
+  void _gamesImported() {
+    _libraryKey.currentState?.reload();
+    setState(() => _overviewRefreshKey++);
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -85,6 +90,8 @@ class _GameBacklogNavigationState extends State<GameBacklogNavigation> {
             GameSettingsScreen(
               themeMode: widget.themeMode,
               onThemeModeChanged: widget.onThemeModeChanged,
+              storage: widget.storage,
+              onGamesImported: _gamesImported,
             ),
           ],
         ),

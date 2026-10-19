@@ -51,6 +51,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late ThemeMode _themeMode;
+  late final GameLibraryStorage _storage = GameLibraryStorage();
 
   @override
   void initState() {
@@ -90,7 +91,7 @@ class _MyAppState extends State<MyApp> {
     Widget firstScreen;
     if (providedHome == null) {
       firstScreen = GameBacklogNavigation(
-        storage: GameLibraryStorage(),
+        storage: _storage,
         themeMode: _themeMode,
         onThemeModeChanged: _changeThemeMode,
       );

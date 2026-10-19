@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../data/game_library_storage.dart';
-import '../data/sample_achievements.dart';
+import '../data/steam_achievement_loader.dart';
+import '../data/steam_api_parser.dart';
 import '../models/achievement_record.dart';
 import '../models/achievement.dart';
 import '../models/game.dart';
@@ -58,31 +59,11 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
   }
 
   Future<List<AchievementRecord>> _loadAchievements() async {
-    final fixtures = widget.fixtureAchievements;
-    if (fixtures != null) {
-      return fixtures
-          .map(
-            (achievement) => AchievementRecord(
-              gameId: widget.game.id,
-              achievement: achievement,
-            ),
-          )
-          .toList();
-    }
-    final definitions = achievementsForGame(widget.game);
-    final storage = widget.storage;
-    if (storage == null) {
-      return definitions
-          .map(
-            (achievement) => AchievementRecord(
-              gameId: widget.game.id,
-              achievement: achievement,
-            ),
-          )
-          .toList();
-    } else {
-      return storage.loadAchievements(widget.game.id, definitions);
-    }
+    return loadGameAchievements(
+      game: widget.game,
+      storage: widget.storage,
+      fixtures: widget.fixtureAchievements,
+    );
   }
 
   void _retry() {
@@ -108,7 +89,7 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               } else if (snapshot.hasError) {
-                return _unavailable(context);
+                return _unavailable(context, snapshot.error);
               } else {
                 final records = snapshot.data;
                 if (records == null || records.isEmpty) {
@@ -137,11 +118,13 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
     );
   }
 
-  Widget _unavailable(BuildContext context) {
+  Widget _unavailable(BuildContext context, Object? error) {
+    var message = 'Achievements are unavailable.';
+    if (error is SteamApiException) message = error.message;
     return _message(
       context,
       icon: Icons.cloud_off_outlined,
-      message: 'Achievements are unavailable.',
+      message: message,
       actions: [
         FilledButton(onPressed: _retry, child: const Text('Retry')),
         TextButton(onPressed: _back, child: const Text('Back')),

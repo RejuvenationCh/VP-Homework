@@ -6,10 +6,12 @@ class AchievementRecord {
     required this.achievement,
     this.isTracked = false,
     this.notes = '',
+    this.progressProfileId,
   });
 
   final String gameId;
   final Achievement achievement;
   final bool isTracked;
   final String notes;
+  final String? progressProfileId;
 }

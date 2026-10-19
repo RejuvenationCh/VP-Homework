@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../data/game_library_storage.dart';
 import 'game_page_body.dart';
+import 'steam_profile_settings_card.dart';
 
 class GameSettingsScreen extends StatelessWidget {
   const GameSettingsScreen({
     super.key,
     required this.themeMode,
     required this.onThemeModeChanged,
+    this.storage,
+    this.onGamesImported,
   });
 
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode> onThemeModeChanged;
+  final GameLibraryStorage? storage;
+  final VoidCallback? onGamesImported;
 
   @override
   Widget build(BuildContext context) {
@@ -43,12 +49,18 @@ class GameSettingsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              if (storage != null)
+                SteamProfileSettingsCard(
+                  storage: storage!,
+                  onImported: onGamesImported,
+                ),
+              if (storage != null) const SizedBox(height: 16),
               const Card(
                 child: ListTile(
                   leading: Icon(Icons.phone_android),
                   title: Text('Local data'),
                   subtitle: Text(
-                    'Games and personal details are saved on this device.',
+                    'Your library and notes stay here. The Steam profile is sent to this app’s configured Steam service.',
                   ),
                 ),
               ),
