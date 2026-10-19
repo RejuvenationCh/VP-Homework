@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/game_library_storage.dart';
 import '../models/game.dart';
 import 'game_artwork.dart';
 import 'game_details_actions.dart';
@@ -11,12 +12,14 @@ class GameDetailsScreen extends StatefulWidget {
   const GameDetailsScreen({
     super.key,
     required this.game,
+    this.storage,
     required this.onGameChanged,
     required this.onEditGame,
     required this.onRemoveGame,
   });
 
   final Game game;
+  final GameLibraryStorage? storage;
   final Future<bool> Function(Game) onGameChanged;
   final Future<Game?> Function(Game) onEditGame;
   final Future<bool> Function(Game) onRemoveGame;
@@ -83,7 +86,7 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
                 onChanged: _saveGame,
                 onEditNotes: _editNotes,
               ),
-              GameAchievementsEntry(game: _game),
+              GameAchievementsEntry(game: _game, storage: widget.storage),
             ],
           ),
         ),

@@ -63,7 +63,6 @@ class GameLibraryScreenState extends State<GameLibraryScreen> {
   }
 
   void _retry() => setState(() => _games = _loadGames());
-
   Future<void> _addGame(List<Game> games) async {
     final draft = Game(
       id: _manualGameIds.next(_currentGames()),
@@ -98,6 +97,7 @@ class GameLibraryScreenState extends State<GameLibraryScreen> {
     MaterialPageRoute<void>(
       builder: (context) => GameDetailsScreen(
         game: game,
+        storage: widget.storage,
         onGameChanged: _updateGame,
         onEditGame: _editGame,
         onRemoveGame: _removeGame,

@@ -9,6 +9,7 @@ class AchievementTile extends StatelessWidget {
     super.key,
     required this.achievement,
     required this.isTracked,
+    required this.isSaving,
     required this.onTrackChanged,
     required this.notes,
     required this.onNotesTap,
@@ -16,6 +17,7 @@ class AchievementTile extends StatelessWidget {
 
   final Achievement achievement;
   final bool isTracked;
+  final bool isSaving;
   final VoidCallback onTrackChanged;
   final String? notes;
   final VoidCallback onNotesTap;
@@ -26,6 +28,12 @@ class AchievementTile extends StatelessWidget {
     if (notes == null) {
       notesTooltip = 'Add achievement notes';
     }
+    VoidCallback? notesAction = onNotesTap;
+    VoidCallback? trackingAction = onTrackChanged;
+    if (isSaving) {
+      notesAction = null;
+      trackingAction = null;
+    }
     return Card(
       child: ListTile(
         leading: AchievementArtwork(imageUrl: achievement.artworkUrl),
@@ -35,12 +43,12 @@ class AchievementTile extends StatelessWidget {
           children: [
             IconButton(
               tooltip: notesTooltip,
-              onPressed: onNotesTap,
+              onPressed: notesAction,
               icon: const Icon(Icons.edit_note),
             ),
             IconButton(
               tooltip: isTracked ? 'Untrack achievement' : 'Track achievement',
-              onPressed: onTrackChanged,
+              onPressed: trackingAction,
               icon: Icon(isTracked ? Icons.bookmark : Icons.bookmark_border),
             ),
           ],

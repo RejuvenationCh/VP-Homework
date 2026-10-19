@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../data/game_library_storage.dart';
 import '../data/sample_achievements.dart';
-import '../models/achievement.dart';
+import '../models/achievement_record.dart';
 import '../models/game.dart';
 import 'achievement_list.dart';
 
 class GameAchievementsEntry extends StatelessWidget {
-  const GameAchievementsEntry({super.key, required this.game});
+  const GameAchievementsEntry({super.key, required this.game, this.storage});
 
   final Game game;
+  final GameLibraryStorage? storage;
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +19,8 @@ class GameAchievementsEntry extends StatelessWidget {
       child: OutlinedButton.icon(
         onPressed: () => Navigator.of(context).push<void>(
           MaterialPageRoute<void>(
-            builder: (context) => GameAchievementsScreen(game: game),
+            builder: (context) =>
+                GameAchievementsScreen(game: game, storage: storage),
           ),
         ),
         icon: const Icon(Icons.emoji_events_outlined),
@@ -28,16 +31,17 @@ class GameAchievementsEntry extends StatelessWidget {
 }
 
 class GameAchievementsScreen extends StatefulWidget {
-  const GameAchievementsScreen({super.key, required this.game});
+  const GameAchievementsScreen({super.key, required this.game, this.storage});
 
   final Game game;
+  final GameLibraryStorage? storage;
 
   @override
   State<GameAchievementsScreen> createState() => _GameAchievementsScreenState();
 }
 
 class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
-  late Future<List<Achievement>> _achievements;
+  late Future<List<AchievementRecord>> _achievements;
 
   @override
   void initState() {
@@ -45,8 +49,21 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
     _achievements = _loadAchievements();
   }
 
-  Future<List<Achievement>> _loadAchievements() async {
-    return achievementsForGame(widget.game);
+  Future<List<AchievementRecord>> _loadAchievements() async {
+    final definitions = achievementsForGame(widget.game);
+    final storage = widget.storage;
+    if (storage == null) {
+      return definitions
+          .map(
+            (achievement) => AchievementRecord(
+              gameId: widget.game.id,
+              achievement: achievement,
+            ),
+          )
+          .toList();
+    } else {
+      return storage.loadAchievements(widget.game.id, definitions);
+    }
   }
 
   void _retry() {
@@ -64,7 +81,7 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Achievements')),
       body: SafeArea(
-        child: FutureBuilder<List<Achievement>>(
+        child: FutureBuilder<List<AchievementRecord>>(
           future: _achievements,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -72,13 +89,14 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
             } else if (snapshot.hasError) {
               return _unavailable(context);
             } else {
-              final achievements = snapshot.data;
-              if (achievements == null || achievements.isEmpty) {
+              final records = snapshot.data;
+              if (records == null || records.isEmpty) {
                 return _empty(context);
               } else {
                 return AchievementList(
                   game: widget.game,
-                  achievements: achievements,
+                  records: records,
+                  storage: widget.storage,
                 );
               }
             }
