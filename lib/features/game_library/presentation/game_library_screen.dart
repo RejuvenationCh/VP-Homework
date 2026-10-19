@@ -112,6 +112,11 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
               notes: notes,
             ),
           ),
+          onFavoriteChanged: (favorite) => _updateGame(
+            games,
+            game.id,
+            (current) => current.withFavorite(favorite),
+          ),
         ),
       ),
     );

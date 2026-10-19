@@ -17,6 +17,21 @@ class GameTile extends StatelessWidget {
     } else {
       sampleLabel = '';
     }
+    String favoriteLabel;
+    if (game.isFavorite) {
+      favoriteLabel = 'Favorite. ';
+    } else {
+      favoriteLabel = '';
+    }
+    Widget? favoriteIcon;
+    if (game.isFavorite) {
+      favoriteIcon = Icon(
+        Icons.favorite,
+        color: Theme.of(context).colorScheme.primary,
+      );
+    } else {
+      favoriteIcon = null;
+    }
 
     return Semantics(
       container: true,
@@ -24,11 +39,12 @@ class GameTile extends StatelessWidget {
       button: true,
       onTap: onTap,
       label:
-          '$sampleLabel${game.name}. Genre: ${game.primaryGenre}. '
+          '$sampleLabel$favoriteLabel${game.name}. Genre: ${game.primaryGenre}. '
           'Platform: ${game.platform}. Personal status: ${game.status.label}',
       child: ListTile(
         onTap: onTap,
         leading: GameArtwork(imageUrl: game.artworkUrl),
+        trailing: favoriteIcon,
         title: Text(game.name, maxLines: 2, overflow: TextOverflow.ellipsis),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

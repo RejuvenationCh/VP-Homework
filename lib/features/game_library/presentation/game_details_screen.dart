@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/game.dart';
 import 'game_artwork.dart';
+import 'game_favorite_button.dart';
 import 'game_notes_screen.dart';
 import 'game_rating_control.dart';
 
@@ -12,12 +13,14 @@ class GameDetailsScreen extends StatefulWidget {
     required this.onStatusChanged,
     required this.onRatingChanged,
     required this.onNotesChanged,
+    required this.onFavoriteChanged,
   });
 
   final Game game;
   final ValueChanged<GameStatus> onStatusChanged;
   final ValueChanged<int?> onRatingChanged;
   final ValueChanged<String> onNotesChanged;
+  final ValueChanged<bool> onFavoriteChanged;
 
   @override
   State<GameDetailsScreen> createState() => _GameDetailsScreenState();
@@ -39,7 +42,15 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Game details')),
+      appBar: AppBar(
+        title: const Text('Game details'),
+        actions: [
+          GameFavoriteButton(
+            isFavorite: widget.game.isFavorite,
+            onChanged: widget.onFavoriteChanged,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),

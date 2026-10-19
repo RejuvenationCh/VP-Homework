@@ -17,6 +17,7 @@ class Game {
     required this.platform,
     required this.status,
     this.isSample = false,
+    this.isFavorite = false,
     this.artworkUrl,
     this.playtimeMinutes,
     this.rating,
@@ -29,6 +30,7 @@ class Game {
   final String primaryGenre;
   final String platform;
   final bool isSample;
+  final bool isFavorite;
   final String? artworkUrl;
   final int? playtimeMinutes;
   final int? rating;
@@ -41,7 +43,15 @@ class Game {
     required GameStatus status,
     required int? rating,
     required String notes,
+    bool? isFavorite,
   }) {
+    bool updatedFavorite;
+    if (isFavorite == null) {
+      updatedFavorite = this.isFavorite;
+    } else {
+      updatedFavorite = isFavorite;
+    }
+
     return Game(
       id: id,
       name: name,
@@ -49,10 +59,20 @@ class Game {
       platform: platform,
       status: status,
       isSample: isSample,
+      isFavorite: updatedFavorite,
       artworkUrl: artworkUrl,
       playtimeMinutes: playtimeMinutes,
       rating: rating,
       notes: notes,
+    );
+  }
+
+  Game withFavorite(bool favorite) {
+    return copyWith(
+      status: status,
+      rating: rating,
+      notes: notes,
+      isFavorite: favorite,
     );
   }
 }
