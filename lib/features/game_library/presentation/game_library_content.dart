@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../dev/constraint_scenario.dart';
 import '../models/game.dart';
 import 'game_library_empty_state.dart';
 import 'game_library_filter.dart';
@@ -14,6 +15,7 @@ class GameLibraryContent extends StatefulWidget {
     required this.onLoadSamples,
     required this.onOpenGame,
     this.genreRequest,
+    this.h2Preview,
   });
 
   final List<Game> games;
@@ -21,6 +23,7 @@ class GameLibraryContent extends StatefulWidget {
   final Future<void> Function(List<Game> games) onLoadSamples;
   final ValueChanged<Game> onOpenGame;
   final String? genreRequest;
+  final GameConstraintPreview? h2Preview;
 
   @override
   State<GameLibraryContent> createState() => _GameLibraryContentState();
@@ -153,7 +156,11 @@ class _GameLibraryContentState extends State<GameLibraryContent> {
         if (visibleGames.isEmpty)
           SliverFillRemaining(hasScrollBody: false, child: _buildNoResults())
         else
-          GameLibraryGrid(games: visibleGames, onOpenGame: widget.onOpenGame),
+          GameLibraryGrid(
+            games: visibleGames,
+            onOpenGame: widget.onOpenGame,
+            h2Preview: widget.h2Preview,
+          ),
       ],
     );
   }

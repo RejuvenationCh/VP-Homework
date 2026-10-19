@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'game_page_body.dart';
+
 class GameSettingsScreen extends StatelessWidget {
   const GameSettingsScreen({
     super.key,
@@ -15,36 +17,43 @@ class GameSettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Appearance',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    _appearanceControl(context),
-                  ],
+        child: GamePageBody(
+          maxWidth: 720,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Appearance',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Follow your device theme or choose a look for the app.',
+                      ),
+                      const SizedBox(height: 20),
+                      _appearanceControl(context),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Card(
-              child: ListTile(
-                leading: Icon(Icons.phone_android),
-                title: Text('Local data'),
-                subtitle: Text(
-                  'Games and personal details are saved on this device.',
+              const SizedBox(height: 16),
+              const Card(
+                child: ListTile(
+                  leading: Icon(Icons.phone_android),
+                  title: Text('Local data'),
+                  subtitle: Text(
+                    'Games and personal details are saved on this device.',
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

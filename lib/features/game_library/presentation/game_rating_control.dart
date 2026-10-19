@@ -45,20 +45,16 @@ class GameRatingControl extends StatelessWidget {
               ),
             ),
           ),
-          Text(ratingLabel),
-          Row(
+          Wrap(
+            spacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              IconButton(
-                tooltip: 'Clear rating',
-                onPressed: clearRating,
-                icon: const Icon(Icons.clear),
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              ),
-              const SizedBox(width: 4),
-              Semantics(
-                excludeSemantics: true,
-                child: const Text('Clear rating'),
-              ),
+              Text(ratingLabel, style: Theme.of(context).textTheme.bodySmall),
+              if (currentRating != null)
+                TextButton(
+                  onPressed: clearRating,
+                  child: const Text('Clear rating'),
+                ),
             ],
           ),
         ],

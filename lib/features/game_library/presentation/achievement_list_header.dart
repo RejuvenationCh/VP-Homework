@@ -10,11 +10,10 @@ class AchievementListHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(gameName, style: Theme.of(context).textTheme.titleLarge),
-        const Align(
-          alignment: Alignment.centerLeft,
-          child: Chip(label: Text('Sample data')),
-        ),
+        Text(gameName, style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 8),
+        Text('Sample data', style: Theme.of(context).textTheme.labelMedium),
+        const SizedBox(height: 20),
       ],
     );
   }

@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../data/game_library_storage.dart';
 import '../data/sample_achievements.dart';
 import '../models/achievement_record.dart';
+import '../models/achievement.dart';
 import '../models/game.dart';
 import 'achievement_list.dart';
+import 'game_page_body.dart';
 
 class GameAchievementsEntry extends StatelessWidget {
   const GameAchievementsEntry({super.key, required this.game, this.storage});
@@ -31,10 +33,16 @@ class GameAchievementsEntry extends StatelessWidget {
 }
 
 class GameAchievementsScreen extends StatefulWidget {
-  const GameAchievementsScreen({super.key, required this.game, this.storage});
+  const GameAchievementsScreen({
+    super.key,
+    required this.game,
+    this.storage,
+    this.fixtureAchievements,
+  });
 
   final Game game;
   final GameLibraryStorage? storage;
+  final List<Achievement>? fixtureAchievements;
 
   @override
   State<GameAchievementsScreen> createState() => _GameAchievementsScreenState();
@@ -50,6 +58,17 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
   }
 
   Future<List<AchievementRecord>> _loadAchievements() async {
+    final fixtures = widget.fixtureAchievements;
+    if (fixtures != null) {
+      return fixtures
+          .map(
+            (achievement) => AchievementRecord(
+              gameId: widget.game.id,
+              achievement: achievement,
+            ),
+          )
+          .toList();
+    }
     final definitions = achievementsForGame(widget.game);
     final storage = widget.storage;
     if (storage == null) {
@@ -81,26 +100,29 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Achievements')),
       body: SafeArea(
-        child: FutureBuilder<List<AchievementRecord>>(
-          future: _achievements,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return _unavailable(context);
-            } else {
-              final records = snapshot.data;
-              if (records == null || records.isEmpty) {
-                return _empty(context);
+        child: GamePageBody(
+          maxWidth: 800,
+          child: FutureBuilder<List<AchievementRecord>>(
+            future: _achievements,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return _unavailable(context);
               } else {
-                return AchievementList(
-                  game: widget.game,
-                  records: records,
-                  storage: widget.storage,
-                );
+                final records = snapshot.data;
+                if (records == null || records.isEmpty) {
+                  return _empty(context);
+                } else {
+                  return AchievementList(
+                    game: widget.game,
+                    records: records,
+                    storage: widget.storage,
+                  );
+                }
               }
-            }
-          },
+            },
+          ),
         ),
       ),
     );

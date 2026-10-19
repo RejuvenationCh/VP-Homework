@@ -75,6 +75,7 @@ class _GameBacklogNavigationState extends State<GameBacklogNavigation> {
               refreshKey: _overviewRefreshKey,
               onGenreSelected: _openGenre,
               onGameSelected: _openOverviewGame,
+              onOpenLibrary: () => _selectDestination(1),
             ),
             GameLibraryScreen(
               key: _libraryKey,

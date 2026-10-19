@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'demo_device.dart';
 import 'responsive_fixtures.dart';
+import 'game_fixtures.dart';
+import 'achievement_fixtures.dart';
 import 'harness_control_group.dart';
 
 class HarnessDeviceControls extends StatelessWidget {
@@ -9,12 +11,16 @@ class HarnessDeviceControls extends StatelessWidget {
     super.key,
     required this.device,
     required this.data,
+    required this.gameData,
+    required this.achievementData,
     required this.landscape,
     required this.keyboard,
     required this.dark,
     required this.insets,
     required this.onDevice,
     required this.onData,
+    required this.onGameData,
+    required this.onAchievementData,
     required this.onLandscape,
     required this.onKeyboard,
     required this.onDark,
@@ -23,9 +29,13 @@ class HarnessDeviceControls extends StatelessWidget {
 
   final DemoDevice device;
   final DemoData data;
+  final GameDemoData gameData;
+  final AchievementDemoData achievementData;
   final bool landscape, keyboard, dark, insets;
   final ValueChanged<DemoDevice> onDevice;
   final ValueChanged<DemoData> onData;
+  final ValueChanged<GameDemoData> onGameData;
+  final ValueChanged<AchievementDemoData> onAchievementData;
   final ValueChanged<bool> onLandscape, onKeyboard, onDark, onInsets;
 
   @override
@@ -57,6 +67,22 @@ class HarnessDeviceControls extends StatelessWidget {
             label: Text(data.label),
             selected: this.data == data,
             onSelected: (value) => onData(data),
+          ),
+      ]),
+      HarnessControlGroup('Game data', [
+        for (final data in GameDemoData.values)
+          ChoiceChip(
+            label: Text(data.label),
+            selected: gameData == data,
+            onSelected: (_) => onGameData(data),
+          ),
+      ]),
+      HarnessControlGroup('Achievement data', [
+        for (final data in AchievementDemoData.values)
+          ChoiceChip(
+            label: Text(data.label),
+            selected: achievementData == data,
+            onSelected: (_) => onAchievementData(data),
           ),
       ]),
       HarnessControlGroup('Conditions', [

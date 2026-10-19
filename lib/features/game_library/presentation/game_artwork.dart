@@ -1,60 +1,64 @@
 import 'package:flutter/material.dart';
 
 class GameArtwork extends StatelessWidget {
-  const GameArtwork({super.key, required this.imageUrl});
+  const GameArtwork({
+    super.key,
+    required this.imageUrl,
+    this.width = 100,
+    this.height = 56,
+    this.borderRadius = const BorderRadius.all(Radius.circular(12)),
+  });
 
   final String? imageUrl;
+  final double width;
+  final double height;
+  final BorderRadius borderRadius;
 
   @override
-  Widget build(BuildContext context) {
-    final url = imageUrl;
-    return SizedBox(width: 100, height: 56, child: _buildImage(context, url));
-  }
+  Widget build(BuildContext context) => SizedBox(
+    width: width,
+    height: height,
+    child: ClipRRect(borderRadius: borderRadius, child: _image(context)),
+  );
 
-  Widget _buildImage(BuildContext context, String? url) {
+  Widget _image(BuildContext context) {
+    final url = imageUrl;
     if (url == null || url.isEmpty) {
-      return _buildPlaceholder(context, false);
+      return _placeholder(context, false);
     } else {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          url,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) {
-              return child;
-            } else {
-              return _buildPlaceholder(context, true);
-            }
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return _buildPlaceholder(context, false);
-          },
-        ),
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) {
+            return child;
+          } else {
+            return _placeholder(context, true);
+          }
+        },
+        errorBuilder: (context, error, stackTrace) =>
+            _placeholder(context, false),
       );
     }
   }
 
-  Widget _buildPlaceholder(BuildContext context, bool loading) {
+  Widget _placeholder(BuildContext context, bool loading) {
     final colors = Theme.of(context).colorScheme;
     Widget child;
     if (loading) {
-      child = const SizedBox(
-        width: 20,
-        height: 20,
+      child = const SizedBox.square(
+        dimension: 24,
         child: CircularProgressIndicator(strokeWidth: 2),
       );
     } else {
       child = Icon(
         Icons.videogame_asset_outlined,
+        size: 36,
         color: colors.onSurfaceVariant,
       );
     }
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
+    return ColoredBox(
+      color: colors.surfaceContainerHighest,
       child: Center(child: child),
     );
   }

@@ -24,49 +24,74 @@ class AchievementTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     var notesTooltip = 'Edit achievement notes';
-    if (notes == null) {
-      notesTooltip = 'Add achievement notes';
-    }
-    VoidCallback? notesAction = onNotesTap;
-    VoidCallback? trackingAction = onTrackChanged;
-    if (isSaving) {
-      notesAction = null;
-      trackingAction = null;
-    }
-    return Card(
-      child: ListTile(
-        leading: AchievementArtwork(imageUrl: achievement.artworkUrl),
-        title: Text(achievement.name),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              tooltip: notesTooltip,
-              onPressed: notesAction,
-              icon: const Icon(Icons.edit_note),
-            ),
-            IconButton(
-              tooltip: isTracked ? 'Untrack achievement' : 'Track achievement',
-              onPressed: trackingAction,
-              icon: Icon(isTracked ? Icons.bookmark : Icons.bookmark_border),
-            ),
-          ],
-        ),
-        subtitle: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (achievement.description.isNotEmpty)
-              Text(achievement.description),
-            if (notes != null && notes!.isNotEmpty)
-              Text(
-                'Note: $notes',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+    if (notes == null) notesTooltip = 'Add achievement notes';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AchievementArtwork(imageUrl: achievement.artworkUrl),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      achievement.name,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                ],
               ),
-            AchievementProgressWidget(achievement: achievement),
-          ],
+              if (achievement.description.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  achievement.description,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ],
+              const SizedBox(height: 16),
+              AchievementProgressWidget(achievement: achievement),
+              if (notes != null && notes!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Note: $notes',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Tooltip(
+                    message: isTracked
+                        ? 'Untrack achievement'
+                        : 'Track achievement',
+                    child: TextButton.icon(
+                      onPressed: isSaving ? null : onTrackChanged,
+                      icon: Icon(
+                        isTracked ? Icons.bookmark : Icons.bookmark_border,
+                        size: 20,
+                      ),
+                      label: Text(isTracked ? 'Tracked' : 'Track'),
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    tooltip: notesTooltip,
+                    onPressed: isSaving ? null : onNotesTap,
+                    icon: const Icon(Icons.edit_note),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

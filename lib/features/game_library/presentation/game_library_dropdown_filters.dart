@@ -29,14 +29,14 @@ class GameLibraryDropdownFilters extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         double itemWidth;
-        if (constraints.maxWidth >= 700) {
-          itemWidth = 164;
+        if (constraints.maxWidth >= 640) {
+          itemWidth = (constraints.maxWidth - 24) / 3;
         } else {
-          itemWidth = (constraints.maxWidth - 8) / 2;
+          itemWidth = constraints.maxWidth;
         }
         return Wrap(
           spacing: 8,
-          runSpacing: 4,
+          runSpacing: 12,
           children: [
             SizedBox(
               width: itemWidth,
@@ -69,6 +69,8 @@ class GameLibraryDropdownFilters extends StatelessWidget {
     List<String> options,
     ValueChanged<String?> onChanged,
   ) {
+    var label = 'Genre';
+    if (allLabel == 'All platforms') label = 'Platform';
     final items = <DropdownMenuItem<String?>>[
       DropdownMenuItem<String?>(value: null, child: Text(allLabel)),
       for (final option in options)
@@ -77,12 +79,15 @@ class GameLibraryDropdownFilters extends StatelessWidget {
           child: Text(option, overflow: TextOverflow.ellipsis),
         ),
     ];
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<String?>(
-        value: value,
-        isExpanded: true,
-        items: items,
-        onChanged: onChanged,
+    return InputDecorator(
+      decoration: InputDecoration(labelText: label),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String?>(
+          value: value,
+          isExpanded: true,
+          items: items,
+          onChanged: onChanged,
+        ),
       ),
     );
   }
@@ -96,12 +101,15 @@ class GameLibraryDropdownFilters extends StatelessWidget {
       for (final status in GameStatus.values)
         DropdownMenuItem<GameStatus?>(value: status, child: Text(status.label)),
     ];
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<GameStatus?>(
-        value: selectedStatus,
-        isExpanded: true,
-        items: items,
-        onChanged: onStatusChanged,
+    return InputDecorator(
+      decoration: const InputDecoration(labelText: 'Status'),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<GameStatus?>(
+          value: selectedStatus,
+          isExpanded: true,
+          items: items,
+          onChanged: onStatusChanged,
+        ),
       ),
     );
   }

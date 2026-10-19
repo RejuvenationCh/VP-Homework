@@ -161,20 +161,18 @@ class _AchievementListState extends State<AchievementList> {
         if (index == 0) {
           return AchievementListHeader(gameName: widget.game.name);
         } else if (index == 1) {
-          return AchievementProgressFilterSection(
-            selectedFilter: _progressFilter,
-            onSelected: (filter) {
-              setState(() {
-                _progressFilter = filter;
-              });
-            },
-          );
-        } else if (index == 2) {
           return AchievementSearchField(
             controller: _searchController,
             query: _query,
             onChanged: _updateQuery,
             onClear: _clearSearch,
+          );
+        } else if (index == 2) {
+          return AchievementProgressFilterSection(
+            selectedFilter: _progressFilter,
+            onSelected: (filter) {
+              setState(() => _progressFilter = filter);
+            },
           );
         } else if (records.isEmpty) {
           return AchievementNoResults(

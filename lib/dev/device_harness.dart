@@ -4,14 +4,15 @@ import 'media_demos/media_cleaner_screen.dart';
 import 'media_demos/storage_overview_screen.dart';
 import '../main.dart';
 import '../features/game_library/data/game_library_storage.dart';
-import '../features/game_library/presentation/game_library_screen.dart';
 import 'responsive_fixtures.dart';
 import 'constraint_scenario.dart';
 import 'demo_device.dart';
 import 'device_stage.dart';
 import 'library_retry_demo.dart';
-import 'harness_scenario_controls.dart';
-import 'harness_device_controls.dart';
+import 'harness_control_panel.dart';
+import 'game_screen_harness.dart';
+import 'game_fixtures.dart';
+import 'achievement_fixtures.dart';
 
 class DeviceHarness extends StatefulWidget {
   const DeviceHarness({super.key, this.persistLibrary = false});
@@ -26,7 +27,10 @@ class _DeviceHarnessState extends State<DeviceHarness> {
   late final GameLibraryStorage _libraryStorage = GameLibraryStorage();
   DemoDevice _device = DemoDevice.small;
   DemoData _data = DemoData.normal;
+  final _gameData = GameFixtureSelection();
+  AchievementDemoData _achievementData = AchievementDemoData.current;
   DemoScreen _page = DemoScreen.library;
+  GameConstraintCase? _gameConstraint;
   bool _landscape = false;
   bool _keyboard = false;
   bool _dark = false;
@@ -34,16 +38,7 @@ class _DeviceHarnessState extends State<DeviceHarness> {
   int _revision = 0;
   ConstraintCase? _constraint;
   bool _showFix = true;
-
   Size get _screen => _landscape ? _device.size.flipped : _device.size;
-
-  Widget _libraryScreen() {
-    if (widget.persistLibrary) {
-      return GameLibraryScreen(storage: _libraryStorage);
-    } else {
-      return const GameLibraryScreen();
-    }
-  }
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -58,23 +53,36 @@ class _DeviceHarnessState extends State<DeviceHarness> {
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final panel = _panel(context);
+              final panel = _panel();
               final stage = DeviceStage(
                 size: _screen,
                 landscape: _landscape,
                 showKeyboard: _keyboard,
                 showInsets: _insets,
                 appBuilder: (media) => MyApp(
-                  key: ValueKey((_data, _page, _constraint, _revision)),
+                  key: ValueKey((
+                    _data,
+                    _gameData.selected,
+                    _achievementData,
+                    _page,
+                    _constraint,
+                    _gameConstraint,
+                    _revision,
+                  )),
                   themeMode: _dark ? ThemeMode.dark : ThemeMode.light,
                   // Override after MaterialApp creates its MediaQuery so routes
                   // and Scaffold both receive the simulated constraints.
                   builder: (context, child) =>
                       MediaQuery(data: media, child: child!),
                   home: switch (_page) {
-                    DemoScreen.library => _libraryScreen(),
+                    DemoScreen.overview => _gameScreen(),
+                    DemoScreen.library => _gameScreen(),
+                    DemoScreen.details => _gameScreen(),
+                    DemoScreen.addEdit => _gameScreen(),
+                    DemoScreen.achievements => _gameScreen(),
+                    DemoScreen.settings => _gameScreen(),
                     DemoScreen.retry => const LibraryRetryDemo(),
-                    DemoScreen.overview => StorageOverviewScreen(
+                    DemoScreen.storageOverview => StorageOverviewScreen(
                       items: _data.items,
                     ),
                     DemoScreen.files => MediaCleanerScreen(
@@ -107,65 +115,85 @@ class _DeviceHarnessState extends State<DeviceHarness> {
     ),
   );
 
-  Widget _panel(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Game Backlog · Week 4',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'H2 uses the media demos. Data scenarios apply to media demos.',
-        ),
-        const SizedBox(height: 16),
-        HarnessScenarioControls(
-          page: _page,
-          constraint: _constraint,
-          showFix: _showFix,
-          onScreen: (screen) => setState(() {
-            _page = screen;
-            _constraint = null;
-            _showFix = true;
-          }),
-          onConstraint: (fault) => setState(() {
-            _constraint = fault;
-            _showFix = true;
-            if (fault != null) {
-              _page = DemoScreen.files;
-              _data = fault == ConstraintCase.longName
-                  ? DemoData.longName
-                  : DemoData.normal;
-            }
-          }),
-          onFix: (value) => setState(() => _showFix = value),
-        ),
-        HarnessDeviceControls(
-          device: _device,
-          data: _data,
-          landscape: _landscape,
-          keyboard: _keyboard,
-          dark: _dark,
-          insets: _insets,
-          onDevice: (value) => setState(() => _device = value),
-          onData: (value) => setState(() => _data = value),
-          onLandscape: (value) => setState(() => _landscape = value),
-          onKeyboard: (value) => setState(() => _keyboard = value),
-          onDark: (value) => setState(() => _dark = value),
-          onInsets: (value) => setState(() => _insets = value),
-        ),
-        Text('Screen: ${_screen.width.toInt()} × ${_screen.height.toInt()} dp'),
-        const SizedBox(height: 8),
-        const Text(
-          'Keyboard is a simulated inset. These screens have no text fields.',
-        ),
-        TextButton.icon(
-          onPressed: () => setState(() => _revision++),
-          icon: const Icon(Icons.restart_alt),
-          label: const Text('Reset demo'),
-        ),
-      ],
-    );
+  Widget _gameScreen() => GameScreenHarness(
+    screen: _page,
+    storage: _selectedGameStorage,
+    memoryGames: _gameData.games,
+    achievementData: _achievementData,
+    gamePreview: _gamePreview,
+    themeMode: _dark ? ThemeMode.dark : ThemeMode.light,
+    onMemoryGamesChanged: (games) => setState(() => _gameData.update(games)),
+    onThemeModeChanged: (mode) =>
+        setState(() => _dark = mode == ThemeMode.dark),
+  );
+  GameLibraryStorage? get _selectedGameStorage =>
+      _gameConstraint == null &&
+          _gameData.selected == GameDemoData.current &&
+          widget.persistLibrary
+      ? _libraryStorage
+      : null;
+
+  GameConstraintPreview? get _gamePreview {
+    final constraint = _gameConstraint;
+    if (constraint == null) {
+      return null;
+    }
+    return GameConstraintPreview(type: constraint, showError: !_showFix);
   }
+
+  Widget _panel() => HarnessControlPanel(
+    page: _page,
+    constraint: _constraint,
+    gameConstraint: _gameConstraint,
+    showFix: _showFix,
+    device: _device,
+    data: _data,
+    gameData: _gameData.selected,
+    achievementData: _achievementData,
+    landscape: _landscape,
+    keyboard: _keyboard,
+    dark: _dark,
+    insets: _insets,
+    screenSize: _screen,
+    onScreen: (screen) => setState(() {
+      _page = screen;
+      _constraint = null;
+      _gameConstraint = null;
+      _showFix = true;
+    }),
+    onConstraint: (fault) => setState(() {
+      _constraint = fault;
+      _gameConstraint = null;
+      _showFix = true;
+      if (fault != null) {
+        _page = DemoScreen.files;
+        _data = fault == ConstraintCase.longName
+            ? DemoData.longName
+            : DemoData.normal;
+      }
+    }),
+    onGameConstraint: (fault) => setState(() {
+      _constraint = null;
+      _gameConstraint = fault;
+      _showFix = true;
+      if (fault == GameConstraintCase.actionRow) {
+        _page = DemoScreen.details;
+      } else if (fault != null) {
+        _page = DemoScreen.library;
+      }
+    }),
+    onFix: (value) => setState(() {
+      _showFix = value;
+      if (_gameConstraint != null) _revision++;
+    }),
+    onDevice: (value) => setState(() => _device = value),
+    onData: (value) => setState(() => _data = value),
+    onGameData: (value) => setState(() => _gameData.select(value)),
+    onAchievementData: (value) => setState(() => _achievementData = value),
+    onLandscape: (value) => setState(() => _landscape = value),
+    onKeyboard: (value) => setState(() => _keyboard = value),
+    onDark: (value) => setState(() => _dark = value),
+    onInsets: (value) => setState(() => _insets = value),
+    onReset: () => setState(() => _revision++),
+  );
 }

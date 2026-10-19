@@ -9,51 +9,63 @@ class OverviewLibrarySummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final counts = <GameStatus, int>{};
-    for (final status in GameStatus.values) {
-      counts[status] = 0;
-    }
-    for (final game in games) {
-      final current = counts[game.status];
-      if (current == null) {
-        counts[game.status] = 1;
-      } else {
-        counts[game.status] = current + 1;
-      }
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Text(
-              'Library summary',
-              style: Theme.of(context).textTheme.titleMedium,
+            Expanded(
+              child: Text(
+                'Your collection',
+                style: theme.textTheme.headlineSmall,
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(_gameTotalLabel),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                for (final status in GameStatus.values)
-                  Chip(label: Text('${counts[status]} ${status.label}')),
-              ],
-            ),
+            Text('${games.length} games', style: theme.textTheme.bodyLarge),
           ],
         ),
-      ),
+        const SizedBox(height: 20),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            var columns = 4;
+            if (constraints.maxWidth < 440) columns = 2;
+            final width = (constraints.maxWidth - (columns - 1) * 12) / columns;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final status in GameStatus.values)
+                  SizedBox(
+                    width: width,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${games.where((game) => game.status == status).length}',
+                            style: theme.textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            status.label,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
     );
-  }
-
-  String get _gameTotalLabel {
-    if (games.length == 1) {
-      return '1 game';
-    } else {
-      return '${games.length} games';
-    }
   }
 }

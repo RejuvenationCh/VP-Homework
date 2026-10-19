@@ -47,7 +47,13 @@ app.*.map.json
 # Widget Preview related
 .widget_preview/
 
-# Local agent notes
+# Private design handoff and tool metadata
+/DESIGN.md
+/.impeccable/
+
+# Private AFL notes and UI review screenshots
 /docs/afl/README.md
 /docs/afl/implementation-plan.md
 /docs/afl/progress.md
+/docs/afl/ui-ux-plan.md
+/docs/afl/ui-screenshots/

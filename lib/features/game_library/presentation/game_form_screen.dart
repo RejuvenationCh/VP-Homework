@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'game_editor_actions.dart';
+import 'game_page_body.dart';
+
 import '../models/game.dart';
 
 class GameFormScreen extends StatefulWidget {
@@ -55,55 +58,44 @@ class _GameFormScreenState extends State<GameFormScreen> {
       child: Scaffold(
         appBar: AppBar(title: Text(title)),
         body: SafeArea(
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _textField(
-                  _titleController,
-                  'Game title',
-                  'Enter a game title',
-                ),
-                const SizedBox(height: 12),
-                _textField(_platformController, 'Platform', 'Enter a platform'),
-                const SizedBox(height: 12),
-                _textField(
-                  _genreController,
-                  'Primary genre',
-                  'Enter a primary genre',
-                ),
-              ],
+          child: GamePageBody(
+            maxWidth: 640,
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Text(
+                    'Game details',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 24),
+                  _textField(
+                    _titleController,
+                    'Game title',
+                    'Enter a game title',
+                  ),
+                  const SizedBox(height: 12),
+                  _textField(
+                    _platformController,
+                    'Platform',
+                    'Enter a platform',
+                  ),
+                  const SizedBox(height: 12),
+                  _textField(
+                    _genreController,
+                    'Primary genre',
+                    'Enter a primary genre',
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-        bottomNavigationBar: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 56),
-                    ),
-                    onPressed: _isSaving ? null : _discard,
-                    child: const Text('Discard'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 56),
-                    ),
-                    onPressed: _isSaving ? null : _save,
-                    child: const Text('Save'),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        bottomNavigationBar: GameEditorActions(
+          isSaving: _isSaving,
+          onDiscard: _discard,
+          onSave: _save,
         ),
       ),
     );
@@ -119,10 +111,7 @@ class _GameFormScreenState extends State<GameFormScreen> {
       enabled: !_isSaving,
       scrollPadding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
       textInputAction: TextInputAction.next,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
+      decoration: InputDecoration(labelText: label),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return error;

@@ -26,17 +26,16 @@ class GameDetailsInfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _metadata(context, 'Genre', game.primaryGenre),
-            _metadata(context, 'Platform', game.platform),
-            _metadata(
-              context,
-              'Playtime',
-              _formatPlaytime(game.playtimeMinutes),
+            Text(
+              'Your progress',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
+            const SizedBox(height: 20),
             _statusSelector(),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Play next'),
+              subtitle: const Text('Pin to Overview'),
               value: game.isPlayNext,
               onChanged: isSaving
                   ? null
@@ -49,10 +48,12 @@ class GameDetailsInfoCard extends StatelessWidget {
                       ),
                     ),
             ),
+            const Divider(height: 28),
             GameRatingControl(
               rating: game.rating,
               onChanged: isSaving ? null : _updateRating,
             ),
+            const Divider(height: 20),
             GameNotesEntry(
               notes: game.notes,
               onTap: isSaving ? null : onEditNotes,
@@ -61,36 +62,6 @@ class GameDetailsInfoCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Widget _metadata(BuildContext context, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 4),
-          Text(value),
-        ],
-      ),
-    );
-  }
-
-  String _formatPlaytime(int? minutes) {
-    if (minutes == null || minutes < 0) {
-      return 'Unknown';
-    } else {
-      final hours = minutes ~/ 60;
-      final remainingMinutes = minutes % 60;
-      if (hours == 0) {
-        return '$minutes min';
-      } else if (remainingMinutes == 0) {
-        return '$hours hr';
-      } else {
-        return '$hours hr $remainingMinutes min';
-      }
-    }
   }
 
   Widget _statusSelector() {

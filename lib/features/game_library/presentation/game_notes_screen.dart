@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'game_editor_actions.dart';
+import 'game_page_body.dart';
+
 class GameNotesEntry extends StatelessWidget {
   const GameNotesEntry({super.key, required this.notes, required this.onTap});
 
@@ -72,58 +75,35 @@ class _GameNotesScreenState extends State<GameNotesScreen> {
           ),
         ),
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _description(context),
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    enabled: !_isSaving,
-                    autofocus: false,
-                    keyboardType: TextInputType.multiline,
-                    maxLines: null,
-                    expands: true,
-                    textAlignVertical: TextAlignVertical.top,
-                    decoration: const InputDecoration(
-                      labelText: 'Notes',
-                      border: OutlineInputBorder(),
+          child: GamePageBody(
+            maxWidth: 640,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _description(context),
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      enabled: !_isSaving,
+                      autofocus: false,
+                      keyboardType: TextInputType.multiline,
+                      maxLines: null,
+                      expands: true,
+                      textAlignVertical: TextAlignVertical.top,
+                      decoration: const InputDecoration(labelText: 'Notes'),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
-        bottomNavigationBar: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 56),
-                    ),
-                    onPressed: _isSaving ? null : _discard,
-                    child: const Text('Discard'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 56),
-                    ),
-                    onPressed: _isSaving ? null : _save,
-                    child: const Text('Save'),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        bottomNavigationBar: GameEditorActions(
+          isSaving: _isSaving,
+          onDiscard: _discard,
+          onSave: _save,
         ),
       ),
     );

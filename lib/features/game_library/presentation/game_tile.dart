@@ -2,37 +2,38 @@ import 'package:flutter/material.dart';
 
 import '../models/game.dart';
 import 'game_artwork.dart';
+import 'game_status_badge.dart';
 
 class GameTile extends StatelessWidget {
-  const GameTile({super.key, required this.game, required this.onTap});
+  const GameTile({
+    super.key,
+    required this.game,
+    required this.onTap,
+    this.showNameOverflow = false,
+  });
 
   final Game game;
   final VoidCallback onTap;
+  final bool showNameOverflow;
 
   @override
   Widget build(BuildContext context) {
-    String sampleLabel;
-    if (game.isSample) {
-      sampleLabel = 'Sample. ';
+    final theme = Theme.of(context);
+    var sampleLabel = '';
+    var favoriteLabel = '';
+    if (game.isSample) sampleLabel = 'Sample. ';
+    if (game.isFavorite) favoriteLabel = 'Favorite. ';
+    Widget title;
+    if (showNameOverflow) {
+      title = Row(children: [Text(game.name)]);
     } else {
-      sampleLabel = '';
-    }
-    String favoriteLabel;
-    if (game.isFavorite) {
-      favoriteLabel = 'Favorite. ';
-    } else {
-      favoriteLabel = '';
-    }
-    Widget? favoriteIcon;
-    if (game.isFavorite) {
-      favoriteIcon = Icon(
-        Icons.favorite,
-        color: Theme.of(context).colorScheme.primary,
+      title = Text(
+        game.name,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.titleMedium,
       );
-    } else {
-      favoriteIcon = null;
     }
-
     return Semantics(
       container: true,
       excludeSemantics: true,
@@ -41,21 +42,71 @@ class GameTile extends StatelessWidget {
       label:
           '$sampleLabel$favoriteLabel${game.name}. Genre: ${game.primaryGenre}. '
           'Platform: ${game.platform}. Personal status: ${game.status.label}',
-      child: ListTile(
-        onTap: onTap,
-        leading: GameArtwork(imageUrl: game.artworkUrl),
-        trailing: favoriteIcon,
-        title: Text(game.name, maxLines: 2, overflow: TextOverflow.ellipsis),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (game.isSample) const Text('Sample'),
-            Text(
-              'Genre: ${game.primaryGenre}\n'
-              'Platform: ${game.platform}\n'
-              'Personal status: ${game.status.label}',
-            ),
-          ],
+      child: Card(
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: GameArtwork(
+                      imageUrl: game.artworkUrl,
+                      width: double.infinity,
+                      height: double.infinity,
+                      borderRadius: BorderRadius.zero,
+                    ),
+                  ),
+                  if (game.isFavorite)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: theme.colorScheme.surface,
+                        child: Icon(
+                          Icons.favorite,
+                          size: 18,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    title,
+                    const SizedBox(height: 4),
+                    Text(
+                      '${game.primaryGenre} · ${game.platform}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        GameStatusBadge(status: game.status),
+                        if (game.isSample)
+                          Text('Sample', style: theme.textTheme.labelSmall),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

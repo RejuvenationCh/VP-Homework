@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../data/game_library_storage.dart';
 import '../models/game.dart';
-import 'game_artwork.dart';
+import 'game_details_body.dart';
 import 'game_details_actions.dart';
-import 'game_details_info_card.dart';
 import 'game_achievements_screen.dart';
 import 'game_notes_screen.dart';
 
@@ -16,6 +15,7 @@ class GameDetailsScreen extends StatefulWidget {
     required this.onGameChanged,
     required this.onEditGame,
     required this.onRemoveGame,
+    this.showH2ActionOverflow = false,
   });
 
   final Game game;
@@ -23,6 +23,7 @@ class GameDetailsScreen extends StatefulWidget {
   final Future<bool> Function(Game) onGameChanged;
   final Future<Game?> Function(Game) onEditGame;
   final Future<bool> Function(Game) onRemoveGame;
+  final bool showH2ActionOverflow;
 
   @override
   State<GameDetailsScreen> createState() => _GameDetailsScreenState();
@@ -54,41 +55,18 @@ class _GameDetailsScreenState extends State<GameDetailsScreen> {
             onFavoriteChanged: _updateFavorite,
             onEdit: _editGame,
             onRemove: _removeGame,
+            showH2Overflow: widget.showH2ActionOverflow,
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: GameArtwork(imageUrl: _game.artworkUrl),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _game.name,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              if (_game.isSample) ...[
-                const SizedBox(height: 8),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Chip(label: Text('Sample')),
-                ),
-              ],
-              const SizedBox(height: 16),
-              GameDetailsInfoCard(
-                game: _game,
-                isSaving: _isSaving,
-                onChanged: _saveGame,
-                onEditNotes: _editNotes,
-              ),
-              GameAchievementsEntry(game: _game, storage: widget.storage),
-            ],
-          ),
+      body: GameDetailsBody(
+        game: _game,
+        isSaving: _isSaving,
+        onChanged: _saveGame,
+        onEditNotes: _editNotes,
+        achievements: GameAchievementsEntry(
+          game: _game,
+          storage: widget.storage,
         ),
       ),
     );

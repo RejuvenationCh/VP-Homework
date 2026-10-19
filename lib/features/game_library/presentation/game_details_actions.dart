@@ -10,6 +10,7 @@ class GameDetailsActions extends StatelessWidget {
     required this.onFavoriteChanged,
     required this.onEdit,
     required this.onRemove,
+    this.showH2Overflow = false,
   });
 
   final bool isFavorite;
@@ -17,28 +18,59 @@ class GameDetailsActions extends StatelessWidget {
   final ValueChanged<bool> onFavoriteChanged;
   final VoidCallback onEdit;
   final VoidCallback onRemove;
+  final bool showH2Overflow;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GameFavoriteButton(
-          isFavorite: isFavorite,
-          isSaving: isSaving,
-          onChanged: onFavoriteChanged,
-        ),
-        IconButton(
-          tooltip: 'Edit game',
-          onPressed: isSaving ? null : onEdit,
-          icon: const Icon(Icons.edit_outlined),
-        ),
-        IconButton(
-          tooltip: 'Remove from library',
-          onPressed: isSaving ? null : onRemove,
-          icon: const Icon(Icons.delete_outline),
-        ),
-      ],
-    );
+    if (showH2Overflow) {
+      return Row(
+        children: [
+          TextButton(
+            onPressed: isSaving ? null : () => onFavoriteChanged(!isFavorite),
+            child: const Text('Change favorite status'),
+          ),
+          TextButton(
+            onPressed: isSaving ? null : onEdit,
+            child: const Text('Edit game details'),
+          ),
+          TextButton(
+            onPressed: isSaving ? null : onRemove,
+            child: const Text('Remove from library'),
+          ),
+        ],
+      );
+    } else {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GameFavoriteButton(
+            isFavorite: isFavorite,
+            isSaving: isSaving,
+            onChanged: onFavoriteChanged,
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Game options',
+            enabled: !isSaving,
+            onSelected: (action) {
+              if (action == 'edit') {
+                onEdit();
+              } else {
+                onRemove();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'edit', child: Text('Edit game')),
+              PopupMenuItem(
+                value: 'remove',
+                child: Text(
+                  'Remove from library',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
   }
 }

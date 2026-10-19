@@ -11,9 +11,14 @@ enum DemoDevice {
 }
 
 enum DemoScreen {
+  overview('Overview'),
   library('Library'),
+  details('Game details'),
+  addEdit('Add/Edit game'),
+  achievements('Achievements'),
+  settings('Settings'),
   retry('Retry demo'),
-  overview('Storage overview'),
+  storageOverview('Storage overview'),
   files('File manager');
 
   const DemoScreen(this.label);

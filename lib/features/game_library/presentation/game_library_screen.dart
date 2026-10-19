@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../dev/constraint_scenario.dart';
 import '../data/game_library_changes.dart';
 import '../data/game_library_storage.dart';
 import '../models/game.dart';
@@ -13,11 +14,15 @@ class GameLibraryScreen extends StatefulWidget {
     this.loadGames,
     this.storage,
     this.genreRequest,
+    this.onGamesChanged,
+    this.h2Preview,
   });
 
   final Future<List<Game>> Function()? loadGames;
   final GameLibraryStorage? storage;
   final String? genreRequest;
+  final ValueChanged<List<Game>>? onGamesChanged;
+  final GameConstraintPreview? h2Preview;
 
   @override
   State<GameLibraryScreen> createState() => GameLibraryScreenState();
@@ -28,19 +33,16 @@ class GameLibraryScreenState extends State<GameLibraryScreen> {
   List<Game>? _libraryGames;
   final _manualGameIds = ManualGameIds();
   bool _isSavingLibrary = false;
-
   Future<List<Game>> _loadGames() async {
     List<Game> games;
     final loader = widget.loadGames;
+    final storage = widget.storage;
     if (loader != null) {
       games = await Future.sync(loader);
+    } else if (storage != null) {
+      games = await storage.loadGames();
     } else {
-      final storage = widget.storage;
-      if (storage != null) {
-        games = await storage.loadGames();
-      } else {
-        games = <Game>[];
-      }
+      games = <Game>[];
     }
     final copy = List<Game>.of(games);
     _libraryGames = copy;
@@ -62,7 +64,9 @@ class GameLibraryScreenState extends State<GameLibraryScreen> {
     }
   }
 
-  void _retry() => setState(() => _games = _loadGames());
+  void reload() => setState(() {
+    _games = _loadGames();
+  });
   Future<void> _addGame(List<Game> games) async {
     final draft = Game(
       id: _manualGameIds.next(_currentGames()),
@@ -84,7 +88,6 @@ class GameLibraryScreenState extends State<GameLibraryScreen> {
 
   Future<bool> _addToCurrentLibrary(Game game) async =>
       _saveAndPublish([..._currentGames(), game]);
-
   Future<void> _loadSamples(List<Game> games) async {
     final current = _currentGames();
     final updatedGames = withSampleGames(current);
@@ -104,12 +107,12 @@ class GameLibraryScreenState extends State<GameLibraryScreen> {
       ),
     ),
   );
-
   Future<bool> openGame(Game game) async {
     try {
       await _games;
       if (mounted) {
         await _openGame(game);
+        reload();
         return true;
       } else {
         return false;
@@ -126,20 +129,15 @@ class GameLibraryScreenState extends State<GameLibraryScreen> {
           GameFormScreen(game: game, isNew: false, onSave: _updateGame),
     ),
   );
-
   Future<bool> _updateGame(Game updated) async {
     final updatedGames = withUpdatedGame(_currentGames(), updated);
-    if (updatedGames == null) {
-      return false;
-    }
+    if (updatedGames == null) return false;
     return _saveAndPublish(updatedGames);
   }
 
   Future<bool> _removeGame(Game game) async {
     final updatedGames = withoutGame(_currentGames(), game);
-    if (updatedGames == null) {
-      return false;
-    }
+    if (updatedGames == null) return false;
     return _saveAndPublish(updatedGames);
   }
 
@@ -160,6 +158,8 @@ class GameLibraryScreenState extends State<GameLibraryScreen> {
         return false;
       } else {
         setState(() => _libraryGames = List<Game>.of(games));
+        final onGamesChanged = widget.onGamesChanged;
+        if (onGamesChanged != null) onGamesChanged(games);
         return true;
       }
     } catch (_) {
@@ -176,21 +176,21 @@ class GameLibraryScreenState extends State<GameLibraryScreen> {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
   List<Game> _currentGames() {
-    final games = _libraryGames;
-    if (games == null) return <Game>[];
-    return games;
+    if (_libraryGames == null) return <Game>[];
+    return _libraryGames!;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Game Backlog')),
+      appBar: AppBar(title: const Text('Library')),
       body: GameLibraryBody(
         games: _games,
         currentGames: _libraryGames,
         hasSavedData: widget.storage != null,
         genreRequest: widget.genreRequest,
-        onRetry: _retry,
+        h2Preview: widget.h2Preview,
+        onRetry: reload,
         onAddGame: _addGame,
         onLoadSamples: _loadSamples,
         onOpenGame: _openGame,

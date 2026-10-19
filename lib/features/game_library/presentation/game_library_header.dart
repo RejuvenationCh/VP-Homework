@@ -56,25 +56,33 @@ class GameLibraryHeader extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Library', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            Row(
               children: [
+                Expanded(
+                  child: Text(
+                    'Games: ${games.length}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
                 FilledButton.icon(
                   onPressed: () => onAddGame(games),
                   icon: const Icon(Icons.add),
                   label: const Text('Add game'),
                 ),
-                TextButton.icon(
-                  onPressed: () => onLoadSamples(games),
-                  icon: const Icon(Icons.download),
-                  label: const Text('Load sample games'),
+                PopupMenuButton<String>(
+                  tooltip: 'Library options',
+                  icon: const Icon(Icons.more_horiz),
+                  onSelected: (_) => onLoadSamples(games),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: 'samples',
+                      child: Text('Load sample games'),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             GameLibraryControls(
               searchController: searchController,
               query: query,

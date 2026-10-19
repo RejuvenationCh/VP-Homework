@@ -86,8 +86,8 @@ void main() {
           .selected,
       isTrue,
     );
-    await tester.tap(find.text('Storage overview'));
-    await tester.pumpAndSettle();
+    await tapPanel(tester, find.text('Storage overview'));
+    await revealPanel(tester, find.text('Small phone'));
     expect(
       tester
           .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Small phone'))
@@ -100,8 +100,7 @@ void main() {
           .selected,
       isFalse,
     );
-    await tester.tap(find.text('Tablet'));
-    await tester.pumpAndSettle();
+    await tapPanel(tester, find.text('Tablet'));
     expect(
       tester
           .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Tablet'))
@@ -115,13 +114,9 @@ void main() {
       isFalse,
     );
     expect(find.byKey(const Key('overview-wide-layout')), findsOneWidget);
-    await tester.tap(find.text('File manager'));
-    await tester.pumpAndSettle();
+    await tapPanel(tester, find.text('File manager'));
     expect(find.byKey(const Key('files-wide-layout')), findsOneWidget);
-    await revealPanel(tester, find.text('Zero items'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Zero items'));
-    await tester.pumpAndSettle();
+    await tapPanel(tester, find.text('Zero items'));
     expect(find.text('Restore demo files'), findsOneWidget);
     expect(
       tester
@@ -135,22 +130,13 @@ void main() {
           .selected,
       isFalse,
     );
-    await revealPanel(tester, find.text('Dark mode'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Dark mode'));
-    await tester.pumpAndSettle();
+    await tapPanel(tester, find.text('Dark mode'));
     final inner = tester.element(find.byType(MediaCleanerScreen));
     expect(Theme.of(inner).brightness, Brightness.dark);
     expect(MediaQuery.sizeOf(inner), const Size(800, 1280));
-    await revealPanel(tester, find.text('Keyboard open'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Keyboard open'));
-    await tester.pumpAndSettle();
+    await tapPanel(tester, find.text('Keyboard open'));
     expect(MediaQuery.viewInsetsOf(inner).bottom, 260);
-    await revealPanel(tester, find.text('Landscape'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Landscape'));
-    await tester.pumpAndSettle();
+    await tapPanel(tester, find.text('Landscape'));
     expect(MediaQuery.sizeOf(inner), const Size(1280, 800));
     expect(MediaQuery.viewInsetsOf(inner).bottom, 180);
     expect(tester.takeException(), isNull);
@@ -163,15 +149,11 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const DeviceHarness());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Retry demo'));
-    await tester.pumpAndSettle();
+    await tapPanel(tester, find.text('Retry demo'));
     expect(find.text('Could not load games'), findsOneWidget);
     expect(find.text('No games yet'), findsNothing);
     expect(find.text('PAYDAY 2'), findsNothing);
-    await revealPanel(tester, find.text('Dark mode'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Dark mode'));
-    await tester.pumpAndSettle();
+    await tapPanel(tester, find.text('Dark mode'));
     expect(find.text('Could not load games'), findsOneWidget);
     expect(
       Theme.of(tester.element(find.text('Could not load games'))).brightness,
@@ -182,15 +164,9 @@ void main() {
     await revealLibraryGame(tester, find.text('PAYDAY 2'));
     expect(find.text('PAYDAY 2'), findsOneWidget);
     expect(find.text('Could not load games'), findsNothing);
-    await revealPanel(tester, find.text('Reset demo'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Reset demo'));
-    await tester.pumpAndSettle();
+    await tapPanel(tester, find.text('Reset demo'));
     expect(find.text('Could not load games'), findsOneWidget);
-    await revealPanel(tester, find.text('Library'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Library'));
-    await tester.pumpAndSettle();
+    await tapPanel(tester, find.text('Library'));
     expect(find.text('No games yet'), findsOneWidget);
     expect(find.text('PAYDAY 2'), findsNothing);
     expect(find.text('Could not load games'), findsNothing);

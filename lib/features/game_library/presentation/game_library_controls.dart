@@ -4,7 +4,7 @@ import '../models/game.dart';
 import 'game_library_filter.dart';
 import 'game_library_dropdown_filters.dart';
 
-class GameLibraryControls extends StatelessWidget {
+class GameLibraryControls extends StatefulWidget {
   const GameLibraryControls({
     super.key,
     required this.searchController,
@@ -47,73 +47,95 @@ class GameLibraryControls extends StatelessWidget {
   final VoidCallback onResetFilters;
 
   @override
+  State<GameLibraryControls> createState() => _GameLibraryControlsState();
+}
+
+class _GameLibraryControlsState extends State<GameLibraryControls> {
+  bool _showFilters = false;
+
+  @override
   Widget build(BuildContext context) {
+    var count = 0;
+    if (widget.selectedGenre != null) count++;
+    if (widget.selectedPlatform != null) count++;
+    if (widget.selectedStatus != null) count++;
+    var label = 'Filters';
+    if (count > 0) label = 'Filters · $count';
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextField(
-          controller: searchController,
-          onChanged: onSearchChanged,
+          controller: widget.searchController,
+          onChanged: widget.onSearchChanged,
           scrollPadding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
           decoration: InputDecoration(
-            hintText: 'Search games',
+            hintText: 'Search your library',
             prefixIcon: const Icon(Icons.search),
-            suffixIcon: query.isEmpty
+            suffixIcon: widget.query.isEmpty
                 ? null
                 : IconButton(
                     tooltip: 'Clear search',
-                    onPressed: onClearSearch,
+                    onPressed: widget.onClearSearch,
                     icon: const Icon(Icons.clear),
                   ),
-            border: const OutlineInputBorder(),
-            isDense: true,
           ),
         ),
         const SizedBox(height: 8),
-        GameLibraryDropdownFilters(
-          genres: genres,
-          platforms: platforms,
-          selectedGenre: selectedGenre,
-          selectedPlatform: selectedPlatform,
-          selectedStatus: selectedStatus,
-          onGenreChanged: onGenreChanged,
-          onPlatformChanged: onPlatformChanged,
-          onStatusChanged: onStatusChanged,
-        ),
-        FilterChip(
-          label: const Text('Favorites'),
-          selected: favoritesOnly,
-          onSelected: onFavoritesChanged,
-        ),
         Wrap(
-          alignment: WrapAlignment.spaceBetween,
           spacing: 8,
           runSpacing: 4,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
+            FilterChip(
+              avatar: const Icon(Icons.favorite_border, size: 18),
+              showCheckmark: false,
+              label: const Text('Favorites'),
+              selected: widget.favoritesOnly,
+              onSelected: widget.onFavoritesChanged,
+            ),
+            OutlinedButton.icon(
+              onPressed: () => setState(() => _showFilters = !_showFilters),
+              icon: Icon(
+                _showFilters ? Icons.expand_less : Icons.tune,
+                size: 18,
+              ),
+              label: Text(label),
+            ),
             PopupMenuButton<GameLibrarySort>(
               tooltip: 'Sort games',
-              initialValue: sort,
-              onSelected: onSortChanged,
+              icon: const Icon(Icons.sort),
+              initialValue: widget.sort,
+              onSelected: widget.onSortChanged,
               itemBuilder: (context) => [
                 for (final option in GameLibrarySort.values)
-                  PopupMenuItem<GameLibrarySort>(
+                  CheckedPopupMenuItem<GameLibrarySort>(
                     value: option,
+                    checked: widget.sort == option,
                     child: Text(option.label),
                   ),
               ],
-              child: Chip(
-                avatar: const Icon(Icons.sort),
-                label: Text(sort.label),
-              ),
             ),
-            if (hasActiveFilters)
+            if (widget.hasActiveFilters)
               TextButton(
-                onPressed: onResetFilters,
+                onPressed: widget.onResetFilters,
                 child: const Text('Reset filters'),
               ),
           ],
         ),
+        if (_showFilters)
+          Padding(
+            padding: const EdgeInsets.only(top: 12, bottom: 8),
+            child: GameLibraryDropdownFilters(
+              genres: widget.genres,
+              platforms: widget.platforms,
+              selectedGenre: widget.selectedGenre,
+              selectedPlatform: widget.selectedPlatform,
+              selectedStatus: widget.selectedStatus,
+              onGenreChanged: widget.onGenreChanged,
+              onPlatformChanged: widget.onPlatformChanged,
+              onStatusChanged: widget.onStatusChanged,
+            ),
+          ),
       ],
     );
   }

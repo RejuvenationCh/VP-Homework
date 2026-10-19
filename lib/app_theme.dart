@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
-  // blue for selections and actions, neutral surfaces for the files
+  // blue for actions, white cards on the light canvas
+  final isLight = brightness == Brightness.light;
   final seeded = ColorScheme.fromSeed(
     seedColor: const Color(0xFF3555B8),
     brightness: brightness,
@@ -11,15 +12,19 @@ ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
       : seeded.copyWith(
           primary: const Color(0xFF3555B8),
           onPrimary: Colors.white,
-          surface: Colors.white,
-          surfaceContainerLow: const Color(0xFFF7F8FA),
-          surfaceContainer: const Color(0xFFF1F2F4),
-          surfaceContainerHighest: const Color(0xFFE9EBEF),
-          onSurface: const Color(0xFF202124),
-          onSurfaceVariant: const Color(0xFF565B65),
-          secondary: const Color(0xFF6655A1),
-          secondaryContainer: const Color(0xFFECE7FA),
-          onSecondaryContainer: const Color(0xFF30244F),
+          surface: const Color(0xFFF0F3F8),
+          surfaceContainerLow: Colors.white,
+          surfaceContainer: const Color(0xFFE9EEF5),
+          surfaceContainerHighest: const Color(0xFFE1E7F0),
+          onSurface: const Color(0xFF192337),
+          onSurfaceVariant: const Color(0xFF47546A),
+          outline: const Color(0xFF758297),
+          outlineVariant: const Color(0xFFCCD5E2),
+          primaryContainer: const Color(0xFFDFE8FF),
+          onPrimaryContainer: const Color(0xFF173577),
+          secondary: const Color(0xFF47546A),
+          secondaryContainer: const Color(0xFFE9EEF5),
+          onSecondaryContainer: const Color(0xFF334155),
           tertiary: const Color(0xFF326B50),
           tertiaryContainer: const Color(0xFFDDF0E4),
           onTertiaryContainer: const Color(0xFF153C29),
@@ -39,8 +44,16 @@ ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
     labelSmall: base.textTheme.labelSmall?.copyWith(fontSize: 11),
   );
   final buttonShape = RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(8),
+    borderRadius: BorderRadius.circular(14),
   );
+
+  var cardShape = buttonShape;
+  if (isLight) {
+    cardShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: colors.outlineVariant),
+    );
+  }
 
   return base.copyWith(
     textTheme: text,
@@ -48,11 +61,27 @@ ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
       color: colors.surfaceContainerLow,
       margin: EdgeInsets.zero,
       elevation: 0,
-      shape: buttonShape,
+      shape: cardShape,
       clipBehavior: Clip.antiAlias,
     ),
     scaffoldBackgroundColor: colors.surface,
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: colors.surfaceContainerLow,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: colors.outlineVariant),
+      ),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      height: 72,
+      backgroundColor: colors.surfaceContainerLow,
+      indicatorColor: colors.primaryContainer,
+    ),
     appBarTheme: AppBarThemeData(
+      centerTitle: false,
       backgroundColor: colors.surface,
       foregroundColor: colors.onSurface,
       surfaceTintColor: Colors.transparent,
@@ -78,7 +107,11 @@ ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
       side: BorderSide(color: colors.outlineVariant),
     ),
     filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(shape: buttonShape, elevation: 0),
+      style: FilledButton.styleFrom(
+        shape: buttonShape,
+        elevation: 0,
+        minimumSize: const Size(48, 48),
+      ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(shape: buttonShape),
