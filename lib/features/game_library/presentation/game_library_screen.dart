@@ -123,28 +123,69 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
       games = loadedGames;
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text('Library', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            FilledButton(
-              onPressed: () => _addGame(games),
-              child: const Text('Add game'),
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Library', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton(
+                      onPressed: () => _addGame(games),
+                      child: const Text('Add game'),
+                    ),
+                    TextButton(
+                      onPressed: () => _loadSamples(games),
+                      child: const Text('Load sample games'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                if (games.isEmpty) const Text('No games yet'),
+              ],
             ),
-            TextButton(
-              onPressed: () => _loadSamples(games),
-              child: const Text('Load sample games'),
-            ),
-          ],
+          ),
         ),
-        const SizedBox(height: 16),
-        if (games.isEmpty) const Text('No games yet'),
-        for (final game in games) GameTile(game: game),
+        if (games.isNotEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            sliver: SliverLayoutBuilder(
+              builder: (context, constraints) {
+                int columnCount;
+                if (constraints.crossAxisExtent >= 600) {
+                  columnCount = 2;
+                } else {
+                  columnCount = 1;
+                }
+                double childAspectRatio;
+                if (columnCount == 1) {
+                  childAspectRatio = 1.35;
+                } else {
+                  childAspectRatio = 1.7;
+                }
+
+                return SliverGrid.builder(
+                  itemCount: games.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columnCount,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: childAspectRatio,
+                  ),
+                  itemBuilder: (context, index) {
+                    return GameTile(game: games[index]);
+                  },
+                );
+              },
+            ),
+          ),
       ],
     );
   }
