@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/sample_achievements.dart';
 import '../models/achievement.dart';
 import '../models/game.dart';
-import 'achievement_artwork.dart';
+import 'achievement_tile.dart';
 
 class GameAchievementsEntry extends StatelessWidget {
   const GameAchievementsEntry({super.key, required this.game});
@@ -89,16 +89,29 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
     BuildContext context,
     List<Achievement> achievements,
   ) {
-    return ListView(
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
+      itemCount: achievements.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return _achievementHeader(context);
+        } else {
+          final achievement = achievements[index - 1];
+          return AchievementTile(achievement: achievement);
+        }
+      },
+    );
+  }
+
+  Widget _achievementHeader(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(widget.game.name, style: Theme.of(context).textTheme.titleLarge),
         const Align(
           alignment: Alignment.centerLeft,
           child: Chip(label: Text('Sample data')),
         ),
-        for (final achievement in achievements)
-          _achievementTile(context, achievement),
       ],
     );
   }
@@ -141,27 +154,6 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             Wrap(spacing: 8, children: actions),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _achievementTile(BuildContext context, Achievement achievement) {
-    return Card(
-      child: ListTile(
-        leading: AchievementArtwork(imageUrl: achievement.artworkUrl),
-        title: Text(achievement.name),
-        subtitle: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (achievement.description.isNotEmpty)
-              Text(achievement.description),
-            Text(
-              achievement.progress.label,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
           ],
         ),
       ),
