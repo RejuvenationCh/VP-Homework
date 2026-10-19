@@ -1,0 +1,171 @@
+openapi: 3.1.0
+info:
+  title: Steam public profile resolver
+  version: 1.0.0
+  description: >-
+    Resolves a public Steam profile identifier to a SteamID64. This does not
+    verify profile ownership.
+  x-cors:
+    allow-origin: '*'
+    allow-methods: [POST, OPTIONS]
+    allow-headers: [Accept, Content-Type]
+    allow-credentials: false
+  x-rate-limit:
+    limit: 30
+    period-seconds: 60
+    key: caller IP address
+    scope: shared with the guide lookup route
+externalDocs:
+  description: Steam ISteamUser Web API
+  url: https://partner.steamgames.com/doc/webapi/ISteamUser?l=english
+servers:
+  - url: http://127.0.0.1:8787
+    description: Local Wrangler development server
+  - url: https://{worker_host}
+    description: Deployed Worker. Deployment is not part of this batch.
+    variables:
+      worker_host:
+        default: replace-with-deployed-worker-host
+paths:
+  /v1/steam/profile/resolve:
+    options:
+      operationId: steamProfileResolveCorsPreflight
+      summary: Handle browser CORS preflight
+      security: []
+      responses:
+        '204':
+          description: Preflight accepted. Credentials are not used.
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+                const: '*'
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                const: 'POST, OPTIONS'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                const: 'Accept, Content-Type'
+    post:
+      operationId: resolveSteamPublicProfile
+      summary: Resolve a Steam profile identifier
+      description: >-
+        Accepts a SteamID64, a vanity name, or an HTTPS URL on
+        steamcommunity.com or www.steamcommunity.com with a single /id/{vanity}
+        or /profiles/{steamid64} path. URL input is parsed locally. The Worker
+        never fetches a user-supplied URL. A syntactically valid SteamID64 is
+        normalized without checking that the account exists. A vanity name is
+        resolved through Steam's ISteamUser.ResolveVanityURL API using a
+        standard user API key at https://api.steampowered.com. The Worker does
+        not use Steam's publisher-only partner host. A successful result
+        identifies a public-profile lookup target, not account ownership or
+        visibility. App authentication is deferred. Requests are limited to
+        30 per caller IP per minute using the Worker's existing shared limit.
+        Bare vanity names must match [A-Za-z0-9_-]{1,64}. Supported profile URLs
+        must use HTTPS, contain no credentials, explicit port, query, or fragment,
+        and may have one trailing slash.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [profile]
+              properties:
+                profile:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+                  description: SteamID64, vanity name, or supported Steam Community profile URL.
+      responses:
+        '200':
+          description: Profile identifier normalized to SteamID64.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [steam_id, profile_url]
+                properties:
+                  steam_id:
+                    type: string
+                    pattern: '^7656119[0-9]{10}$'
+                  profile_url:
+                    type: string
+                    format: uri
+                    pattern: '^https://steamcommunity\.com/profiles/7656119[0-9]{10}/$'
+        '400':
+          description: Missing, malformed, oversized, or unsupported profile input.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Steam did not resolve the submitted vanity name.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileNotFoundError'
+        '405':
+          description: Any method other than POST or OPTIONS is not allowed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Worker's shared per-IP request limit was exceeded.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                const: 60
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Unexpected internal error. Details are not returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: Steam could not be reached or returned an invalid response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: The Worker has no configured Steam API secret.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    ProfileNotFoundError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: string
+          const: profile_not_found
+    Error:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum:
+            - invalid_request
+            - method_not_allowed
+            - rate_limited
+            - steam_unavailable
+            - steam_api_not_configured
+            - internal_error

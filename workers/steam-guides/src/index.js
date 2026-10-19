@@ -1,4 +1,9 @@
 const steamCommunity = 'https://steamcommunity.com';
+const steamApi = 'https://api.steampowered.com';
+const steamProfilePath = '/v1/steam/profile/resolve';
+const steamGuidePath = '/v1/steam/guides';
+const steamOwnedGamesPath = /^\/v1\/steam\/profiles\/([^/]+)\/games$/;
+const steamIdPattern = /^7656119[0-9]{10}$/;
 const guideSearchMarker = 'Results for';
 const guideCardPattern =
   /<a\b(?=[^>]*class="[^"]*\bworkshopItemCollection\b)(?=[^>]*data-publishedfileid="[0-9]+")[^>]*>([\s\S]*?)<\/a>/g;
@@ -48,11 +53,25 @@ const namedHtmlEntities = {
 export default {
   async fetch(request, env) {
     const requestUrl = new URL(request.url);
-    if (requestUrl.pathname !== '/v1/steam/guides') {
-      return jsonResponse({ error: 'not_found' }, 404);
-    }
+    const ownedGamesMatch = requestUrl.pathname.match(steamOwnedGamesPath);
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders() });
+      let allowedMethods = 'GET, OPTIONS';
+      if (requestUrl.pathname === steamProfilePath) {
+        allowedMethods = 'POST, OPTIONS';
+      }
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders(allowedMethods),
+      });
+    }
+    if (requestUrl.pathname === steamProfilePath) {
+      return resolveSteamProfile(request, env);
+    }
+    if (ownedGamesMatch !== null) {
+      return readOwnedGames(request, env, ownedGamesMatch[1]);
+    }
+    if (requestUrl.pathname !== steamGuidePath) {
+      return jsonResponse({ error: 'not_found' }, 404);
     }
     if (request.method !== 'GET') {
       return jsonResponse({ error: 'method_not_allowed' }, 405);
@@ -243,10 +262,10 @@ function decodeHtmlText(value) {
   return decoded;
 }
 
-function corsHeaders() {
+function corsHeaders(allowedMethods = 'GET, OPTIONS') {
   return {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Methods': allowedMethods,
     'Access-Control-Allow-Headers': 'Accept, Content-Type',
     'Access-Control-Expose-Headers': 'Retry-After',
     'Access-Control-Max-Age': '600',
@@ -255,11 +274,367 @@ function corsHeaders() {
   };
 }
 
-function jsonResponse(body, status, extraHeaders = {}) {
-  const headers = new Headers(corsHeaders());
+function jsonResponse(
+  body,
+  status,
+  extraHeaders = {},
+  allowedMethods = 'GET, OPTIONS',
+) {
+  const headers = new Headers(corsHeaders(allowedMethods));
   for (const [name, value] of Object.entries(extraHeaders)) {
     headers.set(name, value);
   }
   return new Response(JSON.stringify(body), { status, headers });
+}
+
+async function resolveSteamProfile(request, env) {
+  if (request.method !== 'POST') {
+    return jsonResponse(
+      { error: 'method_not_allowed' },
+      405,
+      {},
+      'POST, OPTIONS',
+    );
+  }
+
+  if (!isJsonRequest(request)) {
+    return profileError('invalid_request', 400);
+  }
+  const rawBody = await readLimitedBody(request, 2048);
+  if (rawBody === null) {
+    return profileError('invalid_request', 400);
+  }
+
+  let requestBody;
+  try {
+    requestBody = JSON.parse(rawBody);
+  } catch (error) {
+    return profileError('invalid_request', 400);
+  }
+  if (
+    requestBody === null ||
+    Array.isArray(requestBody) ||
+    typeof requestBody !== 'object' ||
+    Object.keys(requestBody).length !== 1 ||
+    typeof requestBody.profile !== 'string' ||
+    requestBody.profile.length < 1 ||
+    requestBody.profile.length > 256
+  ) {
+    return profileError('invalid_request', 400);
+  }
+
+  const identifier = parseSteamProfile(requestBody.profile);
+  if (identifier === null) {
+    return profileError('invalid_request', 400);
+  }
+
+  const rateLimitResponse = await checkSteamRateLimit(
+    request,
+    env,
+    'POST, OPTIONS',
+  );
+  if (rateLimitResponse !== null) {
+    return rateLimitResponse;
+  }
+  if (identifier.steamId !== null) {
+    return profileSuccess(identifier.steamId);
+  }
+  if (typeof env.STEAM_API_KEY !== 'string' || env.STEAM_API_KEY.length === 0) {
+    return profileError('steam_api_not_configured', 503);
+  }
+
+  const apiUrl = new URL(
+    '/ISteamUser/ResolveVanityURL/v1/',
+    steamApi,
+  );
+  apiUrl.searchParams.set('key', env.STEAM_API_KEY);
+  apiUrl.searchParams.set('vanityurl', identifier.vanityName);
+  apiUrl.searchParams.set('url_type', '1');
+
+  let steamResponse;
+  try {
+    steamResponse = await fetch(apiUrl, {
+      headers: { Accept: 'application/json' },
+      redirect: 'manual',
+    });
+  } catch (error) {
+    return profileError('steam_unavailable', 502);
+  }
+  if (!steamResponse.ok) {
+    return profileError('steam_unavailable', 502);
+  }
+
+  let payload;
+  try {
+    payload = await steamResponse.json();
+  } catch (error) {
+    return profileError('steam_unavailable', 502);
+  }
+  const result = payload?.response;
+  if (result?.success === 42) {
+    return profileError('profile_not_found', 404);
+  }
+  if (result?.success !== 1 || !steamIdPattern.test(result.steamid || '')) {
+    return profileError('steam_unavailable', 502);
+  }
+  return profileSuccess(result.steamid);
+}
+
+function isJsonRequest(request) {
+  const contentType = request.headers.get('Content-Type');
+  if (contentType === null) return false;
+  return /^application\/json(?:\s*;|$)/i.test(contentType);
+}
+
+async function readLimitedBody(request, maxBytes) {
+  if (request.body === null) return null;
+  const reader = request.body.getReader();
+  const chunks = [];
+  let byteCount = 0;
+  try {
+    while (true) {
+      const result = await reader.read();
+      if (result.done) break;
+      byteCount += result.value.byteLength;
+      if (byteCount > maxBytes) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(result.value);
+    }
+  } catch (error) {
+    return null;
+  }
+
+  const bytes = new Uint8Array(byteCount);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch (error) {
+    return null;
+  }
+}
+
+async function checkSteamRateLimit(
+  request,
+  env,
+  allowedMethods = 'GET, OPTIONS',
+) {
+  const callerIp = request.headers.get('CF-Connecting-IP');
+  try {
+    const result = await env.STEAM_GUIDE_RATE_LIMIT.limit({
+      key: callerIp || 'unknown',
+    });
+    if (!result.success) {
+      return jsonResponse(
+        { error: 'rate_limited' },
+        429,
+        { 'Retry-After': '60' },
+        allowedMethods,
+      );
+    }
+    return null;
+  } catch (error) {
+    return jsonResponse(
+      { error: 'internal_error' },
+      500,
+      {},
+      allowedMethods,
+    );
+  }
+}
+
+async function readOwnedGames(request, env, steamId) {
+  if (request.method !== 'GET') {
+    return jsonResponse({ error: 'method_not_allowed' }, 405);
+  }
+  if (!steamIdPattern.test(steamId)) {
+    return jsonResponse({ error: 'invalid_request' }, 400);
+  }
+
+  const rateLimitResponse = await checkSteamRateLimit(request, env);
+  if (rateLimitResponse !== null) return rateLimitResponse;
+  if (
+    typeof env.STEAM_API_KEY !== 'string' ||
+    env.STEAM_API_KEY.trim().length === 0
+  ) {
+    return jsonResponse({ error: 'steam_api_not_configured' }, 503);
+  }
+
+  const summaryUrl = new URL('/ISteamUser/GetPlayerSummaries/v2/', steamApi);
+  summaryUrl.searchParams.set('key', env.STEAM_API_KEY);
+  summaryUrl.searchParams.set('steamids', steamId);
+  const summary = await fetchSteamJson(summaryUrl);
+  if (summary === null) {
+    return jsonResponse({ error: 'steam_unavailable' }, 502);
+  }
+  if (
+    summary.response === null ||
+    typeof summary.response !== 'object' ||
+    !Array.isArray(summary.response.players)
+  ) {
+    return jsonResponse({ error: 'steam_unavailable' }, 502);
+  }
+
+  const player = summary.response.players.find((item) => {
+    if (item === null || typeof item !== 'object') return false;
+    return item.steamid === steamId;
+  });
+  if (player === undefined) {
+    return jsonResponse({ error: 'profile_not_found' }, 404);
+  }
+  if (
+    player.communityvisibilitystate === 1 ||
+    player.communityvisibilitystate === 2
+  ) {
+    return ownedGamesResult(steamId, 'private', []);
+  }
+  if (player.communityvisibilitystate !== 3) {
+    return ownedGamesResult(steamId, 'unavailable', []);
+  }
+
+  const gamesUrl = new URL('/IPlayerService/GetOwnedGames/v1/', steamApi);
+  gamesUrl.searchParams.set('key', env.STEAM_API_KEY);
+  gamesUrl.searchParams.set(
+    'input_json',
+    JSON.stringify({
+      steamid: steamId,
+      include_appinfo: true,
+      include_played_free_games: true,
+    }),
+  );
+  const gamesPayload = await fetchSteamJson(gamesUrl);
+  if (gamesPayload === null) {
+    return jsonResponse({ error: 'steam_unavailable' }, 502);
+  }
+  return ownedGamesResponse(steamId, gamesPayload.response);
+}
+
+async function fetchSteamJson(url) {
+  let response;
+  try {
+    response = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      redirect: 'manual',
+    });
+  } catch (error) {
+    return null;
+  }
+  if (!response.ok) return null;
+  try {
+    return await response.json();
+  } catch (error) {
+    return null;
+  }
+}
+
+function ownedGamesResponse(steamId, response) {
+  if (
+    response === null ||
+    typeof response !== 'object' ||
+    !Number.isSafeInteger(response.game_count) ||
+    response.game_count < 0
+  ) {
+    return ownedGamesResult(steamId, 'unavailable', []);
+  }
+  if (response.game_count === 0) {
+    if (
+      response.games !== undefined &&
+      (!Array.isArray(response.games) || response.games.length !== 0)
+    ) {
+      return ownedGamesResult(steamId, 'unavailable', []);
+    }
+    return ownedGamesResult(steamId, 'empty', []);
+  }
+  if (
+    !Array.isArray(response.games) ||
+    response.games.length !== response.game_count
+  ) {
+    return ownedGamesResult(steamId, 'unavailable', []);
+  }
+
+  const games = mapOwnedGames(response.games);
+  if (games === null) {
+    return ownedGamesResult(steamId, 'unavailable', []);
+  }
+  return ownedGamesResult(steamId, 'available', games);
+}
+
+function mapOwnedGames(rawGames) {
+  const games = [];
+  for (const game of rawGames) {
+    if (
+      game === null ||
+      typeof game !== 'object' ||
+      !Number.isSafeInteger(game.appid) ||
+      game.appid < 1 ||
+      game.appid > 4294967295 ||
+      typeof game.name !== 'string' ||
+      game.name.trim().length === 0
+    ) {
+      return null;
+    }
+
+    let playtime = null;
+    if (game.playtime_forever !== undefined && game.playtime_forever !== null) {
+      if (
+        !Number.isSafeInteger(game.playtime_forever) ||
+        game.playtime_forever < 0
+      ) {
+        return null;
+      }
+      playtime = game.playtime_forever;
+    }
+    games.push({
+      app_id: game.appid,
+      name: game.name,
+      playtime_forever_minutes: playtime,
+    });
+  }
+  return games;
+}
+
+function ownedGamesResult(steamId, status, games) {
+  return jsonResponse({ steam_id: steamId, status, games }, 200);
+}
+
+function parseSteamProfile(profile) {
+  if (steamIdPattern.test(profile)) {
+    return { steamId: profile, vanityName: null };
+  }
+  let candidate = profile;
+  if (profile.startsWith('https://')) {
+    const urlMatch = profile.match(
+      /^https:\/\/(?:steamcommunity\.com|www\.steamcommunity\.com)\/(id|profiles)\/([^/?#]+)\/?$/,
+    );
+    if (urlMatch === null) return null;
+    candidate = urlMatch[2];
+    if (urlMatch[1] === 'profiles') {
+      if (!steamIdPattern.test(candidate)) return null;
+      return { steamId: candidate, vanityName: null };
+    }
+  }
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(candidate)) return null;
+  return { steamId: null, vanityName: candidate };
+}
+
+function profileSuccess(steamId) {
+  return jsonResponse(
+    {
+      steam_id: steamId,
+      profile_url: `${steamCommunity}/profiles/${steamId}/`,
+    },
+    200,
+    {},
+    'POST, OPTIONS',
+  );
+}
+
+function profileError(error, status, headers = {}) {
+  return jsonResponse({ error }, status, headers, 'POST, OPTIONS');
 }
 

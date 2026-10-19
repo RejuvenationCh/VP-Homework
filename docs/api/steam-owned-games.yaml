@@ -1,0 +1,194 @@
+openapi: 3.1.0
+info:
+  title: Steam owned games and playtime
+  version: 1.0.0
+  description: >-
+    Reads the visible owned-games list for a Steam profile using a standard
+    Steam user Web API key and the public host https://api.steampowered.com.
+    The Worker does not use the publisher-only partner host. Reports observable
+    profile privacy and whether the API returns usable game data. A zero-entry
+    response cannot prove the account owns no games or that game details are
+    public. This does not prove profile ownership.
+  x-cors:
+    allow-origin: '*'
+    allow-methods: [GET, OPTIONS]
+    allow-headers: [Accept, Content-Type]
+    allow-credentials: false
+  x-rate-limit:
+    limit: 30
+    period-seconds: 60
+    key: caller IP address
+    scope: shared with the existing Steam Worker routes
+externalDocs:
+  description: Steam IPlayerService and ISteamUser Web APIs
+  url: https://partner.steamgames.com/doc/webapi/iplayerservice?language=english
+servers:
+  - url: http://127.0.0.1:8787
+    description: Local Wrangler development server
+  - url: https://{worker_host}
+    description: Deployed Worker. Deployment is not part of this batch.
+    variables:
+      worker_host:
+        default: replace-with-deployed-worker-host
+paths:
+  /v1/steam/profiles/{steam_id}/games:
+    options:
+      operationId: steamOwnedGamesCorsPreflight
+      summary: Handle browser CORS preflight
+      security: []
+      responses:
+        '204':
+          description: Preflight accepted. Credentials are not used.
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+                const: '*'
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+                const: 'GET, OPTIONS'
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+                const: 'Accept, Content-Type'
+    get:
+      operationId: getSteamOwnedGames
+      summary: Read visible owned games and lifetime playtime
+      description: >-
+        Calls ISteamUser/GetPlayerSummaries/v2 with steamids, then
+        IPlayerService/GetOwnedGames/v1 with URL-encoded input_json containing
+        steamid, include_appinfo=true, and include_played_free_games=true.
+        appids_filter is omitted so the complete visible list is returned.
+        SteamID64 input is format-checked. Profile
+        visibility states 1 and 2 return private; state 3 proceeds to the game
+        details read. A valid game_count of zero returns empty. Missing or
+        incomplete game-detail data returns unavailable instead of pretending
+        the list is empty. All GET responses, including errors and rate limits,
+        include Access-Control-Allow-Origin: *. Steam's API does not prove that
+        the caller owns the profile. No user-supplied URL is fetched. The shared
+        Steam API key is used only by the Worker. Requests are limited to 30
+        per caller IP per minute using the shared Worker limiter.
+      security: []
+      parameters:
+        - in: path
+          name: steam_id
+          required: true
+          schema:
+            type: string
+            pattern: '^7656119[0-9]{10}$'
+          description: SteamID64 returned by the profile resolver.
+      responses:
+        '200':
+          description: Visible game data or an explicit availability state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnedGamesResult'
+        '400':
+          description: SteamID64 path value is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Steam did not return a matching profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '405':
+          description: Any method other than GET or OPTIONS is not allowed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: The Worker's shared per-IP request limit was exceeded.
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                const: 60
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Unexpected internal error. Details are not returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: Steam could not be reached, returned invalid JSON, or throttled the request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: The Worker has no configured Steam API secret.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    OwnedGamesResult:
+      type: object
+      additionalProperties: false
+      required: [steam_id, status, games]
+      properties:
+        steam_id:
+          type: string
+          pattern: '^7656119[0-9]{10}$'
+        status:
+          type: string
+          enum: [available, empty, private, unavailable]
+          description: >-
+            available has a complete nonempty game list. empty has a valid
+            GetOwnedGames response with integer game_count zero and games
+            omitted or empty. A positive game_count requires a games array
+            whose length matches. empty means Steam reported no visible
+            entries; it does not prove the account owns no games or that game
+            details are public because Steam provides no separate signal.
+            private means
+            communityvisibilitystate is 1 or 2. unavailable means visibility
+            is unknown or Steam did not return a complete, usable game list.
+            For empty, private, and unavailable, games is always empty. Any
+            incomplete game list is discarded instead of returning partial data.
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/OwnedGame'
+    OwnedGame:
+      type: object
+      additionalProperties: false
+      required: [app_id, name, playtime_forever_minutes]
+      properties:
+        app_id:
+          type: integer
+          minimum: 1
+          maximum: 4294967295
+        name:
+          type: string
+          minLength: 1
+        playtime_forever_minutes:
+          type: [integer, 'null']
+          minimum: 0
+          description: Null means Steam did not return playtime for this game.
+    Error:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum:
+            - invalid_request
+            - profile_not_found
+            - method_not_allowed
+            - rate_limited
+            - steam_unavailable
+            - steam_api_not_configured
+            - internal_error
