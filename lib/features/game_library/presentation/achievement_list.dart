@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/achievement.dart';
 import '../models/game.dart';
+import 'achievement_progress_filter.dart';
 import 'achievement_tile.dart';
 
 class AchievementList extends StatefulWidget {
@@ -21,6 +22,7 @@ class AchievementList extends StatefulWidget {
 class _AchievementListState extends State<AchievementList> {
   final _searchController = TextEditingController();
   String _query = '';
+  AchievementProgressFilter _progressFilter = AchievementProgressFilter.all;
 
   @override
   void dispose() {
@@ -30,10 +32,19 @@ class _AchievementListState extends State<AchievementList> {
 
   List<Achievement> _filteredAchievements() {
     final query = _query.trim().toLowerCase();
-    if (query.isEmpty) {
-      return widget.achievements;
-    } else {
-      return widget.achievements.where((achievement) {
+    return widget.achievements.where((achievement) {
+      if (_progressFilter == AchievementProgressFilter.unlocked) {
+        if (achievement.progress != AchievementProgress.unlocked) {
+          return false;
+        }
+      } else if (_progressFilter == AchievementProgressFilter.locked) {
+        if (achievement.progress != AchievementProgress.locked) {
+          return false;
+        }
+      }
+      if (query.isEmpty) {
+        return true;
+      } else {
         final name = achievement.name.toLowerCase();
         final description = achievement.description.toLowerCase();
         if (name.contains(query) || description.contains(query)) {
@@ -41,8 +52,8 @@ class _AchievementListState extends State<AchievementList> {
         } else {
           return false;
         }
-      }).toList();
-    }
+      }
+    }).toList();
   }
 
   void _clearSearch() {
@@ -52,12 +63,20 @@ class _AchievementListState extends State<AchievementList> {
     });
   }
 
+  void _showAllAchievements() {
+    _searchController.clear();
+    setState(() {
+      _query = '';
+      _progressFilter = AchievementProgressFilter.all;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final achievements = _filteredAchievements();
-    var itemCount = achievements.length + 2;
+    var itemCount = achievements.length + 3;
     if (achievements.isEmpty) {
-      itemCount = 3;
+      itemCount = 4;
     }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -66,13 +85,29 @@ class _AchievementListState extends State<AchievementList> {
         if (index == 0) {
           return _header(context);
         } else if (index == 1) {
+          return _progressFilterSelector();
+        } else if (index == 2) {
           return _searchField();
         } else if (achievements.isEmpty) {
           return _noResults(context);
         } else {
-          return AchievementTile(achievement: achievements[index - 2]);
+          return AchievementTile(achievement: achievements[index - 3]);
         }
       },
+    );
+  }
+
+  Widget _progressFilterSelector() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AchievementProgressFilterSelector(
+        selectedFilter: _progressFilter,
+        onSelected: (filter) {
+          setState(() {
+            _progressFilter = filter;
+          });
+        },
+      ),
     );
   }
 
@@ -136,6 +171,10 @@ class _AchievementListState extends State<AchievementList> {
           TextButton(
             onPressed: _clearSearch,
             child: const Text('Clear search'),
+          ),
+          TextButton(
+            onPressed: _showAllAchievements,
+            child: const Text('Show all achievements'),
           ),
         ],
       ),
