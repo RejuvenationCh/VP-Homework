@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/game_library_storage.dart';
 import '../models/game.dart';
+import 'genre_bubble_map.dart';
 
 class GameOverviewScreen extends StatefulWidget {
   const GameOverviewScreen({
@@ -93,40 +94,6 @@ class _GameOverviewScreenState extends State<GameOverviewScreen> {
         counts[genre] = count + 1;
       }
     }
-    final genres = counts.keys.toList()..sort();
-    final bubbles = <Widget>[];
-    final colors = Theme.of(context).colorScheme;
-    final maxBubbleWidth = MediaQuery.sizeOf(context).width - 64;
-    for (final genre in genres) {
-      final count = counts[genre];
-      if (count != null) {
-        bubbles.add(
-          ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxBubbleWidth),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: colors.secondaryContainer,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: colors.primary,
-                    foregroundColor: colors.onPrimary,
-                    child: Text('$count'),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(child: Text(genre, softWrap: true)),
-                ],
-              ),
-            ),
-          ),
-        );
-      }
-    }
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -139,7 +106,7 @@ class _GameOverviewScreenState extends State<GameOverviewScreen> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Wrap(spacing: 8, runSpacing: 4, children: bubbles),
+          child: GenreBubbleMap(counts: counts),
         ),
       ],
     );
