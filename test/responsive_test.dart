@@ -4,8 +4,50 @@ import 'package:media_cleaner/main.dart';
 import 'package:media_cleaner/dev/responsive_fixtures.dart';
 import 'package:media_cleaner/dev/media_demos/storage_overview_screen.dart';
 import 'package:media_cleaner/dev/media_demos/media_cleaner_screen.dart';
+import 'package:media_cleaner/features/game_library/models/game.dart';
+import 'package:media_cleaner/features/game_library/presentation/game_library_screen.dart';
 
 void main() {
+  testWidgets(
+    'library tile keeps long titles readable and labels its details',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final semantics = tester.ensureSemantics();
+      const longName = 'A Very Long Game Name That Needs More Than One Line';
+      const expectedLabel =
+          'Sample. $longName. Genre: Action RPG. Platform: Steam Deck. '
+          'Personal status: Playing';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GameLibraryScreen(
+            loadGames: () async => const [
+              Game(
+                id: 'long-title',
+                name: longName,
+                primaryGenre: 'Action RPG',
+                platform: 'Steam Deck',
+                status: GameStatus.playing,
+                isSample: true,
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final title = tester.widget<Text>(find.text(longName));
+      expect(title.maxLines, 2);
+      expect(title.overflow, TextOverflow.ellipsis);
+      expect(find.bySemanticsLabel(expectedLabel), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    },
+  );
+
   testWidgets('small phone can select a file without overflowing', (
     tester,
   ) async {

@@ -2,10 +2,70 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_cleaner/dev/device_harness.dart';
 import 'package:media_cleaner/dev/media_demos/media_cleaner_screen.dart';
+import 'package:media_cleaner/features/game_library/models/game.dart';
+import 'package:media_cleaner/features/game_library/presentation/game_artwork.dart';
+import 'package:media_cleaner/features/game_library/presentation/game_library_screen.dart';
 
 import 'support/harness_controls.dart';
 
 void main() {
+  testWidgets('library rows show artwork with loading and missing fallbacks', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GameLibraryScreen(
+          loadGames: () async => const [
+            Game(
+              id: 'sample-art',
+              name: 'Art game',
+              primaryGenre: 'Shooter',
+              platform: 'PC',
+              status: GameStatus.backlog,
+              artworkUrl: 'https://art.example/game.jpg',
+            ),
+            Game(
+              id: 'manual-no-art',
+              name: 'Manual game',
+              primaryGenre: 'Unsorted',
+              platform: 'Unspecified',
+              status: GameStatus.backlog,
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GameArtwork), findsNWidgets(2));
+    expect(find.byIcon(Icons.videogame_asset_outlined), findsNWidgets(2));
+
+    final image = tester.widget<Image>(
+      find.descendant(
+        of: find.byType(GameArtwork).first,
+        matching: find.byType(Image),
+      ),
+    );
+    expect(image.loadingBuilder, isNotNull);
+    expect(image.errorBuilder, isNotNull);
+
+    final context = tester.element(find.byType(GameArtwork).first);
+    final loadingWidget = image.loadingBuilder!(
+      context,
+      const SizedBox.shrink(),
+      const ImageChunkEvent(cumulativeBytesLoaded: 1, expectedTotalBytes: 2),
+    );
+    final errorWidget = image.errorBuilder!(
+      context,
+      StateError('Image failed'),
+      StackTrace.current,
+    );
+    await tester.pumpWidget(MaterialApp(home: loadingWidget));
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.pumpWidget(MaterialApp(home: errorWidget));
+    expect(find.byIcon(Icons.videogame_asset_outlined), findsOneWidget);
+  });
+
   testWidgets('harness controls change frame, data, theme and screen', (
     tester,
   ) async {

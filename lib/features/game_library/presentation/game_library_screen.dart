@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/sample_games.dart';
 import '../models/game.dart';
 import 'add_game_dialog.dart';
+import 'game_tile.dart';
 
 class GameLibraryScreen extends StatefulWidget {
   const GameLibraryScreen({super.key, this.loadGames});
@@ -143,21 +144,7 @@ class _GameLibraryScreenState extends State<GameLibraryScreen> {
         ),
         const SizedBox(height: 16),
         if (games.isEmpty) const Text('No games yet'),
-        for (final game in games)
-          ListTile(
-            title: Text(game.name),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (game.isSample) const Text('Sample'),
-                Text(
-                  'Genre: ${game.primaryGenre}\n'
-                  'Platform: ${game.platform}\n'
-                  'Personal status: ${game.status.label}',
-                ),
-              ],
-            ),
-          ),
+        for (final game in games) GameTile(game: game),
       ],
     );
   }
