@@ -13,6 +13,7 @@ const sampleGames = [
     primaryGenre: 'Shooter',
     platform: 'PC',
     status: GameStatus.backlog,
+    playtimeMinutes: 125,
     artworkUrl: 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/218620/c44949287e8ffa2518f01b5033b8431dd0f984e4/header.jpg?t=1789555107',
   ),
   Game(

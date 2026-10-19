@@ -40,6 +40,11 @@ class GameDetailsScreen extends StatelessWidget {
                     children: [
                       _metadata(context, 'Genre', game.primaryGenre),
                       _metadata(context, 'Platform', game.platform),
+                      _metadata(
+                        context,
+                        'Playtime',
+                        _formatPlaytime(game.playtimeMinutes),
+                      ),
                       _metadata(context, 'Personal status', game.status.label),
                     ],
                   ),
@@ -64,5 +69,22 @@ class GameDetailsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatPlaytime(int? minutes) {
+    if (minutes == null || minutes < 0) {
+      return 'Unknown';
+    } else {
+      final hours = minutes ~/ 60;
+      final remainingMinutes = minutes % 60;
+
+      if (hours == 0) {
+        return '$minutes min';
+      } else if (remainingMinutes == 0) {
+        return '$hours hr';
+      } else {
+        return '$hours hr $remainingMinutes min';
+      }
+    }
   }
 }
