@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/game_library_storage.dart';
 import '../data/steam_api_client.dart';
+import '../data/steam_genre_import.dart';
 import '../data/steam_api_parser.dart';
 import '../data/steam_service_configuration.dart';
 
@@ -84,7 +85,22 @@ class _SteamProfileSettingsCardState extends State<SteamProfileSettingsCard> {
         await widget.storage.importSteamGames(result.games);
         final onImported = widget.onImported;
         if (onImported != null) onImported();
-        _showMessage('Imported ${result.games.length} games from Steam.');
+        _showMessage('Reading game genres…');
+        var genresComplete = true;
+        try {
+          genresComplete = await fillSteamGenres(
+            widget.storage,
+            client.baseUrl,
+          );
+        } catch (_) {
+          genresComplete = false;
+        }
+        if (onImported != null) onImported();
+        var message = 'Imported ${result.games.length} games from Steam.';
+        if (!genresComplete) {
+          message += ' Some genres are unavailable. Refresh to try again.';
+        }
+        _showMessage(message);
       }
     } on SteamApiException catch (error) {
       _showMessage(error.message);

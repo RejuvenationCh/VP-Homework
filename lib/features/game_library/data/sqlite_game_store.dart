@@ -77,6 +77,30 @@ class SqliteGameStore {
     });
   }
 
+  Future<void> applySteamGenres(Map<String, String?> genres) async {
+    await database.transaction(() async {
+      final games = await load();
+      var changed = false;
+      for (var i = 0; i < games.length; i++) {
+        final game = games[i];
+        final genre = genres[game.steamAppId];
+        if (genre != null &&
+            genre.trim().isNotEmpty &&
+            (game.primaryGenre.trim().isEmpty ||
+                game.primaryGenre == 'Unsorted')) {
+          games[i] = game.copyWith(
+            status: game.status,
+            rating: game.rating,
+            notes: game.notes,
+            primaryGenre: genre,
+          );
+          changed = true;
+        }
+      }
+      if (changed) await _replace(games);
+    });
+  }
+
   Future<void> _replace(List<Game> games) async {
     await database.customStatement('DELETE FROM games');
     for (var index = 0; index < games.length; index++) {

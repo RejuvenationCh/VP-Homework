@@ -1,3 +1,5 @@
+import { readGameGenres } from './steam-genres.js';
+
 const steamCommunity = 'https://steamcommunity.com';
 const steamApi = 'https://api.steampowered.com';
 const steamProfilePath = '/v1/steam/profile/resolve';
@@ -69,6 +71,9 @@ export default {
     }
     if (requestUrl.pathname === steamProfilePath) {
       return resolveSteamProfile(request, env);
+    }
+    if (requestUrl.pathname === '/v1/steam/games/genres') {
+      return readGameGenres(request, env, jsonResponse, checkSteamRateLimit);
     }
     if (achievementsMatch !== null) {
       return readSteamAchievements(

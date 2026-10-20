@@ -66,6 +66,12 @@ class GameLibraryStorage {
     await _saveGameSnapshot(await _games.load());
   }
 
+  Future<void> applySteamGenres(Map<String, String?> genres) async {
+    await _ready;
+    await _games.applySteamGenres(genres);
+    await _saveGameSnapshot(await _games.load());
+  }
+
   Future<SteamProfileTarget?> loadSteamProfile() async {
     await _ready;
     return _steamProfile.load();

@@ -1,0 +1,69 @@
+openapi: 3.1.0
+info:
+  title: Steam game genres
+  version: 1.0.0
+  description: Public Steam Store metadata, independent of account ownership.
+servers:
+  - url: https://game-backlog-steam-guides.steam-guides.workers.dev
+paths:
+  /v1/steam/games/genres:
+    options:
+      responses:
+        '204':
+          description: CORS preflight, GET and OPTIONS, origin *, no credentials.
+    get:
+      operationId: readSteamGameGenres
+      security: []
+      description: >-
+        Uses fixed store.steampowered.com/api/appdetails with English genres.
+        At most ten subrequests per invocation, five concurrent, each with an
+        eight-second timeout. Public successful results are cached for one day.
+        Missing/deleted/private Store entries or upstream failures return null
+        for that entry, without failing unrelated game imports. Null failures
+        are not cached. Empty genre lists on successful entries may be cached.
+        Shares the existing per-IP 30 requests per 60 seconds rate limit.
+        No user key or profile is sent to the Store metadata endpoint.
+      parameters:
+        - in: query
+          name: app_ids
+          required: true
+          schema:
+            type: string
+            pattern: '^[1-9][0-9]{0,9}(,[1-9][0-9]{0,9}){0,9}$'
+          description: One to ten distinct Steam app IDs, each <=4294967295.
+      responses:
+        '200':
+          description: One result per requested ID in the same order.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [games]
+                additionalProperties: false
+                properties:
+                  games:
+                    type: array
+                    minItems: 1
+                    maxItems: 10
+                    items:
+                      type: object
+                      required: [app_id, primary_genre]
+                      additionalProperties: false
+                      properties:
+                        app_id:
+                          type: integer
+                          minimum: 1
+                          maximum: 4294967295
+                        primary_genre:
+                          type: [string, 'null']
+                          minLength: 1
+                          maxLength: 80
+                          description: First valid Steam genre, or null if unavailable.
+        '400':
+          description: JSON error invalid_request for invalid, duplicate, or too many IDs.
+        '405':
+          description: JSON error method_not_allowed for methods other than GET/OPTIONS.
+        '429':
+          description: JSON error rate_limited, Retry-After 60.
+        '500':
+          description: JSON error internal_error if rate-limit binding fails.

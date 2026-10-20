@@ -23,3 +23,5 @@ flutter build apk --release --dart-define=STEAM_GUIDE_API_BASE_URL=https://game-
 ```
 
 Run the build command from the repository root. The hosted address is also the source default, so `flutter build apk --release` works without a URL flag.
+
+Genre lookup is `GET /v1/steam/games/genres?app_ids=105600,1293830`. It accepts up to ten distinct app IDs, reads English Steam Store genres from a fixed host, and caches successful metadata for one day. Missing Store data returns null for that entry. The endpoint shares the existing rate limit and needs no Steam key. See `docs/api/steam-game-genres.yaml` from the repository root.
