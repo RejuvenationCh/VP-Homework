@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/game_library_storage.dart';
 import '../data/steam_api_client.dart';
 import '../data/steam_api_parser.dart';
+import '../data/steam_service_configuration.dart';
 
 class SteamProfileSettingsCard extends StatefulWidget {
   const SteamProfileSettingsCard({
@@ -21,7 +22,6 @@ class SteamProfileSettingsCard extends StatefulWidget {
 
 class _SteamProfileSettingsCardState extends State<SteamProfileSettingsCard> {
   final _controller = TextEditingController();
-  final _client = SteamApiClient();
   String? _profileUrl;
   String? _message;
   bool _isLoading = true;
@@ -69,12 +69,15 @@ class _SteamProfileSettingsCardState extends State<SteamProfileSettingsCard> {
       _message = 'Reading public Steam profile…';
     });
     try {
-      final profile = await _client.resolveProfile(input);
+      final client = SteamApiClient(
+        baseUrl: await resolveSteamServiceUrl(widget.storage),
+      );
+      final profile = await client.resolveProfile(input);
       await widget.storage.saveSteamProfile(profile);
       if (mounted) {
         setState(() => _profileUrl = profile.profileUrl);
       }
-      final result = await _client.readGames(profile.steamId);
+      final result = await client.readGames(profile.steamId);
       if (result.status == 'private') {
         _showMessage('Profile saved. Its game details are private.');
       } else if (result.status == 'empty') {

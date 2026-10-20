@@ -40,31 +40,44 @@ class LegacyDataMigration {
 
   Future<void> run() async {
     await database.customSelect('SELECT 1').get();
-    final rows = await database
+    final completed = await database
         .customSelect("SELECT value FROM settings WHERE key = '$_migrationKey'")
         .get();
-    if (rows.isNotEmpty) return;
-    final savedGames = _readGames(await preferences.getString(_gameKey));
-    final savedAchievements = _readAchievements(
-      await preferences.getString(_achievementKey),
-    );
-    if (savedGames.isNotEmpty) await games.save(savedGames);
-    final byGame = <String, List<AchievementRecord>>{};
-    for (final record in savedAchievements) {
-      byGame
-          .putIfAbsent(record.gameId, () => <AchievementRecord>[])
-          .add(record);
-    }
-    for (final entry in byGame.entries) {
-      await achievements.save(entry.key, entry.value);
-    }
-    await database.customInsert(
-      'INSERT INTO settings (key, value) VALUES (?, ?)',
-      variables: [
-        Variable.withString(_migrationKey),
-        Variable.withString('complete'),
-      ],
-    );
+    if (completed.isNotEmpty) return;
+    final gameSnapshot = await preferences.getString(_gameKey);
+    final achievementSnapshot = await preferences.getString(_achievementKey);
+    await database.transaction(() async {
+      // Take the write lock before another tab starts the migration
+      await database.customStatement(
+        'UPDATE settings SET value = value WHERE key = ?',
+        [_migrationKey],
+      );
+      final rows = await database
+          .customSelect(
+            "SELECT value FROM settings WHERE key = '$_migrationKey'",
+          )
+          .get();
+      if (rows.isNotEmpty) return;
+      final savedGames = _readGames(gameSnapshot);
+      final savedAchievements = _readAchievements(achievementSnapshot);
+      if (savedGames.isNotEmpty) await games.save(savedGames);
+      final byGame = <String, List<AchievementRecord>>{};
+      for (final record in savedAchievements) {
+        byGame
+            .putIfAbsent(record.gameId, () => <AchievementRecord>[])
+            .add(record);
+      }
+      for (final entry in byGame.entries) {
+        await achievements.save(entry.key, entry.value);
+      }
+      await database.customInsert(
+        'INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)',
+        variables: [
+          Variable.withString(_migrationKey),
+          Variable.withString('complete'),
+        ],
+      );
+    });
   }
 
   List<Game> _readGames(String? value) {

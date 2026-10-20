@@ -58,3 +58,4 @@ app.*.map.json
 # Local Cloudflare Worker secrets
 workers/**/.dev.vars*
 workers/**/.env*
+workers/**/.wrangler/

@@ -5,18 +5,16 @@ import 'package:http/http.dart' as http;
 import '../models/steam_profile_target.dart';
 import 'steam_api_parser.dart';
 
-const _apiBaseUrl = String.fromEnvironment(
-  'STEAM_GUIDE_API_BASE_URL',
-  defaultValue: 'http://127.0.0.1:8787',
-);
-
 class SteamApiClient {
+  SteamApiClient({required this.baseUrl});
+
+  final String baseUrl;
   static final http.Client _client = http.Client();
 
   Future<SteamProfileTarget> resolveProfile(String input) async {
     final response = await _client
         .post(
-          Uri.parse('$_apiBaseUrl/v1/steam/profile/resolve'),
+          Uri.parse('$baseUrl/v1/steam/profile/resolve'),
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -31,7 +29,7 @@ class SteamApiClient {
     if (!isValidSteamId(steamId)) {
       throw const SteamApiException('Steam profile ID is invalid.');
     }
-    final uri = Uri.parse('$_apiBaseUrl/v1/steam/profiles/$steamId/games');
+    final uri = Uri.parse('$baseUrl/v1/steam/profiles/$steamId/games');
     final response = await _client
         .get(uri, headers: {'Accept': 'application/json'})
         .timeout(const Duration(seconds: 20));
@@ -47,7 +45,7 @@ class SteamApiClient {
       throw const SteamApiException('Steam game target is invalid.');
     }
     final uri = Uri.parse(
-      '$_apiBaseUrl/v1/steam/profiles/$steamId/games/$appId/achievements',
+      '$baseUrl/v1/steam/profiles/$steamId/games/$appId/achievements',
     );
     final response = await _client
         .get(uri, headers: {'Accept': 'application/json'})

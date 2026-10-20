@@ -5,51 +5,82 @@ import 'game_library_storage.dart';
 import 'sample_achievements.dart';
 import 'steam_api_client.dart';
 import 'steam_api_parser.dart';
+import 'steam_service_configuration.dart';
 
-Future<List<AchievementRecord>> loadGameAchievements({
+class AchievementLoadResult {
+  const AchievementLoadResult(this.records, {this.warning});
+
+  final List<AchievementRecord> records;
+  final String? warning;
+}
+
+Future<AchievementLoadResult> loadGameAchievements({
   required Game game,
   required GameLibraryStorage? storage,
   List<Achievement>? fixtures,
 }) async {
   final definitions = fixtures;
   if (definitions != null) {
-    return definitions
-        .map((item) => AchievementRecord(gameId: game.id, achievement: item))
-        .toList();
+    return AchievementLoadResult(
+      definitions
+          .map((item) => AchievementRecord(gameId: game.id, achievement: item))
+          .toList(),
+    );
   }
-  if (storage == null) return _sampleRecords(game);
+  if (storage == null) return AchievementLoadResult(_sampleRecords(game));
   final profile = await storage.loadSteamProfile();
   final appId = game.steamAppId;
   if (profile == null || appId == null) {
     if (game.isSample || appId == null) {
-      return storage.loadAchievements(game.id, achievementsForGame(game));
+      return AchievementLoadResult(
+        await storage.loadAchievements(game.id, achievementsForGame(game)),
+      );
     }
     throw const SteamApiException(
       'Set a Steam profile in Settings to load live achievements.',
     );
   }
   try {
-    final result = await SteamApiClient().readAchievements(
-      profile.steamId,
-      appId,
+    final client = SteamApiClient(
+      baseUrl: await resolveSteamServiceUrl(storage),
     );
-    if (result.status == 'no_achievements') return <AchievementRecord>[];
+    final result = await client.readAchievements(profile.steamId, appId);
+    if (result.status == 'no_achievements') {
+      return const AchievementLoadResult(<AchievementRecord>[]);
+    }
     final achievements = result.items.map(toAchievement).toList();
     if (result.status == 'progress_unavailable') {
       final saved = await storage.loadSavedAchievements(game.id);
       if (_hasOtherProfileProgress(saved, profile.steamId)) {
-        return _savedForProfile(saved, profile.steamId);
+        return AchievementLoadResult(
+          _savedForProfile(saved, profile.steamId),
+          warning: 'Live progress is unavailable. Showing saved achievements.',
+        );
       }
     }
-    return await storage.loadAchievements(
+    final records = await storage.loadAchievements(
       game.id,
       achievements,
       preserveProgress: result.status == 'progress_unavailable',
       profileId: profile.steamId,
     );
+    String? warning;
+    if (result.status == 'progress_unavailable') {
+      warning = 'Live progress is unavailable. Showing saved progress where available.';
+    }
+    return AchievementLoadResult(records, warning: warning);
   } catch (error) {
     final saved = await storage.loadSavedAchievements(game.id);
-    if (saved.isNotEmpty) return _savedForProfile(saved, profile.steamId);
+    if (saved.isNotEmpty) {
+      var message = 'Could not refresh. Showing saved achievements.';
+      if (error is SteamApiException) {
+        message = '${error.message} Showing saved achievements.';
+      }
+      return AchievementLoadResult(
+        _savedForProfile(saved, profile.steamId),
+        warning: message,
+      );
+    }
     rethrow;
   }
 }

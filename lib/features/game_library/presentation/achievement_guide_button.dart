@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/steam_guide_lookup.dart';
+import '../data/game_library_storage.dart';
+import '../data/steam_api_parser.dart';
 import '../models/achievement.dart';
 import '../models/game.dart';
 import 'achievement_guide_not_found.dart';
@@ -10,10 +12,12 @@ class AchievementGuideButton extends StatefulWidget {
   const AchievementGuideButton({
     super.key,
     required this.game,
+    this.storage,
     required this.achievement,
   });
 
   final Game game;
+  final GameLibraryStorage? storage;
   final Achievement achievement;
 
   @override
@@ -28,6 +32,7 @@ class _AchievementGuideButtonState extends State<AchievementGuideButton> {
     try {
       final guide = await findAchievementGuide(
         game: widget.game,
+        storage: widget.storage,
         achievementName: widget.achievement.name,
       );
       if (!mounted) return;
@@ -47,6 +52,8 @@ class _AchievementGuideButtonState extends State<AchievementGuideButton> {
         );
         if (!opened && mounted) _showError();
       }
+    } on SteamApiException catch (error) {
+      if (mounted) _showError(error.message);
     } catch (_) {
       if (mounted) _showError();
     } finally {
@@ -54,10 +61,11 @@ class _AchievementGuideButtonState extends State<AchievementGuideButton> {
     }
   }
 
-  void _showError() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Guide search is unavailable. Try again.')),
-    );
+  void _showError([
+    String message = 'Guide search is unavailable. Try again.',
+  ]) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

@@ -11,8 +11,7 @@ class GameStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = GameStatusColors.forBrightness(theme.brightness)
-        .colorFor(status);
+    final color = gameStatusColor(status, theme);
     IconData icon;
     if (status == GameStatus.playing) {
       icon = Icons.play_arrow_rounded;

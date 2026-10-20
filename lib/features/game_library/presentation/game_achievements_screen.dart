@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../data/game_library_storage.dart';
 import '../data/steam_achievement_loader.dart';
 import '../data/steam_api_parser.dart';
-import '../models/achievement_record.dart';
 import '../models/achievement.dart';
 import '../models/game.dart';
 import 'achievement_list.dart';
@@ -50,7 +49,8 @@ class GameAchievementsScreen extends StatefulWidget {
 }
 
 class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
-  late Future<List<AchievementRecord>> _achievements;
+  late Future<AchievementLoadResult> _achievements;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -58,16 +58,22 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
     _achievements = _loadAchievements();
   }
 
-  Future<List<AchievementRecord>> _loadAchievements() async {
-    return loadGameAchievements(
-      game: widget.game,
-      storage: widget.storage,
-      fixtures: widget.fixtureAchievements,
-    );
+  Future<AchievementLoadResult> _loadAchievements() async {
+    try {
+      return await loadGameAchievements(
+        game: widget.game,
+        storage: widget.storage,
+        fixtures: widget.fixtureAchievements,
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _retry() {
+    if (_isLoading) return;
     setState(() {
+      _isLoading = true;
       _achievements = _loadAchievements();
     });
   }
@@ -79,11 +85,20 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Achievements')),
+      appBar: AppBar(
+        title: const Text('Achievements'),
+        actions: [
+          IconButton(
+            onPressed: _isLoading ? null : _retry,
+            tooltip: 'Refresh achievements',
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: GamePageBody(
           maxWidth: 800,
-          child: FutureBuilder<List<AchievementRecord>>(
+          child: FutureBuilder<AchievementLoadResult>(
             future: _achievements,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -91,14 +106,37 @@ class _GameAchievementsScreenState extends State<GameAchievementsScreen> {
               } else if (snapshot.hasError) {
                 return _unavailable(context, snapshot.error);
               } else {
-                final records = snapshot.data;
+                final result = snapshot.data;
+                final records = result?.records;
                 if (records == null || records.isEmpty) {
                   return _empty(context);
                 } else {
-                  return AchievementList(
-                    game: widget.game,
-                    records: records,
-                    storage: widget.storage,
+                  return Column(
+                    children: [
+                      if (result?.warning != null)
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Text(
+                                result!.warning!,
+                                textAlign: TextAlign.center,
+                              ),
+                              TextButton(
+                                onPressed: _retry,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      Expanded(
+                        child: AchievementList(
+                          game: widget.game,
+                          records: records,
+                          storage: widget.storage,
+                        ),
+                      ),
+                    ],
                   );
                 }
               }

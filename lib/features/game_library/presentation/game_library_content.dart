@@ -6,6 +6,7 @@ import 'game_library_empty_state.dart';
 import 'game_library_filter.dart';
 import 'game_library_grid.dart';
 import 'game_library_header.dart';
+import 'game_library_start.dart';
 
 class GameLibraryContent extends StatefulWidget {
   const GameLibraryContent({
@@ -49,7 +50,20 @@ class _GameLibraryContentState extends State<GameLibraryContent> {
     super.didUpdateWidget(oldWidget);
     if (widget.genreRequest != null &&
         oldWidget.genreRequest != widget.genreRequest) {
+      _searchController.clear();
+      _query = '';
+      _selectedPlatform = null;
+      _selectedStatus = null;
+      _favoritesOnly = false;
       _selectedGenre = widget.genreRequest;
+    }
+    if (_selectedGenre != null &&
+        !libraryGenres(widget.games).contains(_selectedGenre)) {
+      _selectedGenre = null;
+    }
+    if (_selectedPlatform != null &&
+        !libraryPlatforms(widget.games).contains(_selectedPlatform)) {
+      _selectedPlatform = null;
     }
   }
 
@@ -92,30 +106,9 @@ class _GameLibraryContentState extends State<GameLibraryContent> {
   @override
   Widget build(BuildContext context) {
     if (widget.games.isEmpty) {
-      return CustomScrollView(
-        slivers: [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: GameLibraryEmptyState(
-              icon: Icons.sports_esports_outlined,
-              message: 'No games yet',
-              actions: [
-                FilledButton.icon(
-                  onPressed: () {
-                    widget.onAddGame(widget.games);
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add game'),
-                ),
-                TextButton.icon(
-                  onPressed: () => widget.onLoadSamples(widget.games),
-                  icon: const Icon(Icons.download),
-                  label: const Text('Load sample games'),
-                ),
-              ],
-            ),
-          ),
-        ],
+      return GameLibraryStart(
+        onAddGame: () => widget.onAddGame(widget.games),
+        onLoadSamples: () => widget.onLoadSamples(widget.games),
       );
     }
 

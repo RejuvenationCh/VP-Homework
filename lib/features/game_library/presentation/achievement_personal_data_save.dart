@@ -11,6 +11,7 @@ Future<bool> saveAchievementPersonalData({
   required Set<String> trackedAchievementIds,
   required Map<String, String> notesByAchievementId,
   required void Function(bool) onSavingChanged,
+  required void Function(List<AchievementRecord>) onSaved,
 }) async {
   if (storage == null) return true;
   onSavingChanged(true);
@@ -32,7 +33,12 @@ Future<bool> saveAchievementPersonalData({
         ),
       );
     }
-    await storage.saveAchievements(gameId, updatedRecords);
+    final saved = await storage.saveAchievementPersonalChanges(
+      gameId,
+      records,
+      updatedRecords,
+    );
+    onSaved(saved);
     return true;
   } catch (_) {
     if (context.mounted) {
@@ -43,5 +49,19 @@ Future<bool> saveAchievementPersonalData({
     return false;
   } finally {
     onSavingChanged(false);
+  }
+}
+
+void applySavedAchievementPersonalData(
+  List<AchievementRecord> records,
+  Set<String> tracked,
+  Map<String, String> notes,
+) {
+  tracked.clear();
+  notes.clear();
+  for (final record in records) {
+    final id = record.achievement.id;
+    if (record.isTracked) tracked.add(id);
+    notes[id] = record.notes;
   }
 }

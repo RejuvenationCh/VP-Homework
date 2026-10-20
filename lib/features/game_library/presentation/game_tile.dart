@@ -54,7 +54,7 @@ class GameTile extends StatelessWidget {
                   AspectRatio(
                     aspectRatio: 16 / 9,
                     child: GameArtwork(
-                      imageUrl: game.artworkUrl,
+                      imageUrl: game.resolvedArtworkUrl,
                       width: double.infinity,
                       height: double.infinity,
                       borderRadius: BorderRadius.zero,

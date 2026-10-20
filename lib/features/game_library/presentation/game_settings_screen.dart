@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/game_library_storage.dart';
 import 'game_page_body.dart';
 import 'steam_profile_settings_card.dart';
+import 'steam_service_settings_card.dart';
 
 class GameSettingsScreen extends StatelessWidget {
   const GameSettingsScreen({
@@ -49,6 +50,10 @@ class GameSettingsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              if (storage != null) ...[
+                SteamServiceSettingsCard(storage: storage!),
+                const SizedBox(height: 16),
+              ],
               if (storage != null)
                 SteamProfileSettingsCard(
                   storage: storage!,

@@ -20,11 +20,9 @@ class AchievementList extends StatefulWidget {
     required this.records,
     this.storage,
   });
-
   final Game game;
   final List<AchievementRecord> records;
   final GameLibraryStorage? storage;
-
   @override
   State<AchievementList> createState() => _AchievementListState();
 }
@@ -34,20 +32,18 @@ class _AchievementListState extends State<AchievementList> {
   final Set<String> _trackedAchievementIds = {};
   final Map<String, String> _notesByAchievementId = {};
   bool _isSavingPersonalData = false;
+  late List<AchievementRecord> _personalBaseline;
   String _query = '';
   AchievementProgressFilter _progressFilter = AchievementProgressFilter.all;
-
   @override
   void initState() {
     super.initState();
-    for (final record in widget.records) {
-      if (record.isTracked) {
-        _trackedAchievementIds.add(record.achievement.id);
-      }
-      if (record.notes.isNotEmpty) {
-        _notesByAchievementId[record.achievement.id] = record.notes;
-      }
-    }
+    _personalBaseline = widget.records;
+    applySavedAchievementPersonalData(
+      widget.records,
+      _trackedAchievementIds,
+      _notesByAchievementId,
+    );
   }
 
   @override
@@ -123,9 +119,17 @@ class _AchievementListState extends State<AchievementList> {
       context: context,
       storage: widget.storage,
       gameId: widget.game.id,
-      records: widget.records,
+      records: _personalBaseline,
       trackedAchievementIds: _trackedAchievementIds,
       notesByAchievementId: _notesByAchievementId,
+      onSaved: (records) {
+        _personalBaseline = records;
+        applySavedAchievementPersonalData(
+          records,
+          _trackedAchievementIds,
+          _notesByAchievementId,
+        );
+      },
       onSavingChanged: (value) {
         if (mounted) setState(() => _isSavingPersonalData = value);
       },
@@ -138,13 +142,9 @@ class _AchievementListState extends State<AchievementList> {
   }
 
   void _updateQuery(String value) => setState(() => _query = value);
-
   void _showAllAchievements() {
-    _searchController.clear();
-    setState(() {
-      _query = '';
-      _progressFilter = AchievementProgressFilter.all;
-    });
+    _clearSearch();
+    setState(() => _progressFilter = AchievementProgressFilter.all);
   }
 
   @override
@@ -184,6 +184,7 @@ class _AchievementListState extends State<AchievementList> {
           final record = records[index - 3];
           final achievement = record.achievement;
           return AchievementTile(
+            storage: widget.storage,
             game: widget.game,
             achievement: achievement,
             isTracked: _trackedAchievementIds.contains(achievement.id),

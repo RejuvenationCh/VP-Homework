@@ -123,7 +123,13 @@ class _GameLibraryControlsState extends State<GameLibraryControls> {
                   children: [
                     const Icon(Icons.sort),
                     const SizedBox(width: 8),
-                    Text('Sort: ${widget.sort.label}'),
+                    Flexible(
+                      child: Text(
+                        'Sort: ${widget.sort.label}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
               ),

@@ -112,9 +112,11 @@ export default {
 
     const guideUrl = buildGuideUrl(appId, searchText.trim());
     let steamResponse;
+    const guideSignal = AbortSignal.timeout(8000);
     try {
       steamResponse = await fetch(guideUrl, {
         headers: { Accept: 'text/html' },
+        signal: guideSignal,
       });
     } catch (error) {
       return jsonResponse({ error: 'steam_unavailable' }, 502);
@@ -367,6 +369,7 @@ async function resolveSteamProfile(request, env) {
     steamResponse = await fetch(apiUrl, {
       headers: { Accept: 'application/json' },
       redirect: 'manual',
+      signal: AbortSignal.timeout(8000),
     });
   } catch (error) {
     return profileError('steam_unavailable', 502);
@@ -531,6 +534,7 @@ async function fetchSteamJson(url) {
     response = await fetch(url, {
       headers: { Accept: 'application/json' },
       redirect: 'manual',
+      signal: AbortSignal.timeout(8000),
     });
   } catch (error) {
     return null;

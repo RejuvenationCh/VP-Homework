@@ -6,6 +6,7 @@ import '../models/game.dart';
 import '../models/steam_profile_target.dart';
 import 'game_database.dart';
 import 'game_json.dart';
+import 'game_save_merge.dart';
 
 class SqliteGameStore {
   const SqliteGameStore(this.database);
@@ -27,10 +28,14 @@ class SqliteGameStore {
     return games;
   }
 
-  Future<void> save(List<Game> games) async {
-    await database.transaction(() async {
+  Future<List<Game>> save(List<Game> games, {List<Game>? previous}) async {
+    return database.transaction(() async {
       final existing = await load();
-      final keptIds = games.map((game) => game.id).toSet();
+      var merged = games;
+      if (previous != null) {
+        merged = mergeGameChanges(existing, previous, games);
+      }
+      final keptIds = merged.map((game) => game.id).toSet();
       for (final game in existing) {
         if (!keptIds.contains(game.id) && game.steamAppId != null) {
           await database.customInsert(
@@ -39,7 +44,8 @@ class SqliteGameStore {
           );
         }
       }
-      await _replace(games);
+      await _replace(merged);
+      return merged;
     });
   }
 

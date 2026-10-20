@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'game_editor_actions.dart';
 import 'game_page_body.dart';
+import 'game_cover_field.dart';
 
 import '../models/game.dart';
 
@@ -26,6 +27,7 @@ class _GameFormScreenState extends State<GameFormScreen> {
   late final TextEditingController _titleController;
   late final TextEditingController _platformController;
   late final TextEditingController _genreController;
+  late final TextEditingController _coverController;
   bool _isSaving = false;
 
   @override
@@ -34,6 +36,7 @@ class _GameFormScreenState extends State<GameFormScreen> {
     _titleController = TextEditingController(text: widget.game.name);
     _platformController = TextEditingController(text: widget.game.platform);
     _genreController = TextEditingController(text: widget.game.primaryGenre);
+    _coverController = TextEditingController(text: widget.game.artworkUrl);
   }
 
   @override
@@ -41,6 +44,7 @@ class _GameFormScreenState extends State<GameFormScreen> {
     _titleController.dispose();
     _platformController.dispose();
     _genreController.dispose();
+    _coverController.dispose();
     super.dispose();
   }
 
@@ -86,6 +90,11 @@ class _GameFormScreenState extends State<GameFormScreen> {
                     _genreController,
                     'Primary genre',
                     'Enter a primary genre',
+                  ),
+                  const SizedBox(height: 12),
+                  GameCoverField(
+                    controller: _coverController,
+                    enabled: !_isSaving,
                   ),
                 ],
               ),
@@ -135,6 +144,8 @@ class _GameFormScreenState extends State<GameFormScreen> {
         name: _titleController.text.trim(),
         platform: _platformController.text.trim(),
         primaryGenre: _genreController.text.trim(),
+        artworkUrl: _coverController.text.trim(),
+        clearArtwork: _coverController.text.trim().isEmpty,
         status: widget.game.status,
         rating: widget.game.rating,
         notes: widget.game.notes,

@@ -11,7 +11,6 @@ class OverviewLibrarySummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final statusColors = GameStatusColors.forBrightness(theme.brightness);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -56,7 +55,7 @@ class OverviewLibrarySummary extends StatelessWidget {
                           Text(
                             status.label,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: statusColors.colorFor(status),
+                              color: gameStatusColor(status, theme),
                             ),
                           ),
                         ],

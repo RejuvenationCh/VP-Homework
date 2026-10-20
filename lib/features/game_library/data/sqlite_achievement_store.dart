@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../models/achievement.dart';
 import '../models/achievement_record.dart';
 import 'achievement_json.dart';
+import 'achievement_personal_merge.dart';
 import 'game_database.dart';
 
 class SqliteAchievementStore {
@@ -51,6 +52,38 @@ class SqliteAchievementStore {
     String gameId,
     List<Achievement> definitions, {
     bool preserveProgress = false,
+    String? profileId,
+  }) async {
+    return database.transaction(
+      () => _mergeDefinitions(
+        gameId,
+        definitions,
+        preserveProgress: preserveProgress,
+        profileId: profileId,
+      ),
+    );
+  }
+
+  Future<List<AchievementRecord>> savePersonalChanges(
+    String gameId,
+    List<AchievementRecord> previous,
+    List<AchievementRecord> updated,
+  ) async {
+    return database.transaction(() async {
+      final saved = mergeAchievementPersonalChanges(
+        await loadSaved(gameId),
+        previous,
+        updated,
+      );
+      await save(gameId, saved);
+      return saved;
+    });
+  }
+
+  Future<List<AchievementRecord>> _mergeDefinitions(
+    String gameId,
+    List<Achievement> definitions, {
+    required bool preserveProgress,
     String? profileId,
   }) async {
     final ids = <String>{};

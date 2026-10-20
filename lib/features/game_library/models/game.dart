@@ -35,6 +35,20 @@ class Game {
   final bool isFavorite;
   final bool isPlayNext;
   final String? artworkUrl;
+
+  String? get resolvedArtworkUrl {
+    final custom = artworkUrl;
+    if (custom != null && custom.trim().isNotEmpty) {
+      return custom;
+    }
+    final appId = steamAppId;
+    if (appId != null && RegExp(r'^[1-9][0-9]{0,9}$').hasMatch(appId)) {
+      return 'https://cdn.akamai.steamstatic.com/steam/apps/$appId/header.jpg';
+    } else {
+      return null;
+    }
+  }
+
   final String? steamAppId;
   final int? playtimeMinutes;
   final int? rating;
@@ -52,6 +66,8 @@ class Game {
     required int? rating,
     required String notes,
     bool? isFavorite,
+    String? artworkUrl,
+    bool clearArtwork = false,
   }) {
     String updatedName;
     if (name == null) {
@@ -88,6 +104,15 @@ class Game {
       updatedPlayNext = isPlayNext;
     }
 
+    String? updatedArtwork;
+    if (clearArtwork) {
+      updatedArtwork = null;
+    } else if (artworkUrl != null) {
+      updatedArtwork = artworkUrl;
+    } else {
+      updatedArtwork = this.artworkUrl;
+    }
+
     return Game(
       id: id,
       name: updatedName,
@@ -97,7 +122,7 @@ class Game {
       isSample: isSample,
       isFavorite: updatedFavorite,
       isPlayNext: updatedPlayNext,
-      artworkUrl: artworkUrl,
+      artworkUrl: updatedArtwork,
       steamAppId: steamAppId,
       playtimeMinutes: playtimeMinutes,
       rating: rating,

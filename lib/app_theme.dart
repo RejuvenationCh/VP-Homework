@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'game_status_theme.dart';
+
 ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
   // blue for actions, white cards on the light canvas
   final isLight = brightness == Brightness.light;
@@ -56,6 +58,7 @@ ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
   }
 
   return base.copyWith(
+    extensions: [GameStatusTheme.forBrightness(brightness)],
     textTheme: text,
     cardTheme: CardThemeData(
       color: colors.surfaceContainerLow,

@@ -12,4 +12,6 @@ The `.dev.vars` file is ignored by Git. Wrangler exposes the value to Worker cod
 
 To add the secret to a Cloudflare Worker later, run `npx wrangler@4 secret put STEAM_API_KEY` from this directory. This repository has not set a Cloudflare secret or deployed the Worker.
 
+After deploying the Worker, enter its HTTPS root URL in the app's Settings under **Steam service**, or provide it at build time with `STEAM_GUIDE_API_BASE_URL`. A phone cannot reach the computer's Worker through `127.0.0.1`. Keep the local command for Chrome development. Worker requests to Steam stop after eight seconds so the app can show an unavailable response instead of waiting indefinitely.
+
 The guide lookup does not call the Steam Web API and needs no key. Vanity profile resolution and owned-game/playtime reads use `STEAM_API_KEY` on the Worker. The game-read route returns only public data. It reports private profiles and incomplete or unavailable Steam responses separately. A complete zero-game response means there are no visible entries, not proof of account ownership.
