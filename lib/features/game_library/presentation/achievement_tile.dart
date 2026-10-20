@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/achievement.dart';
-import '../data/game_library_storage.dart';
 import '../models/game.dart';
 import 'achievement_artwork.dart';
 import 'achievement_guide_button.dart';
@@ -11,7 +10,6 @@ class AchievementTile extends StatelessWidget {
   const AchievementTile({
     super.key,
     required this.game,
-    this.storage,
     required this.achievement,
     required this.isTracked,
     required this.isSaving,
@@ -21,7 +19,6 @@ class AchievementTile extends StatelessWidget {
   });
 
   final Game game;
-  final GameLibraryStorage? storage;
   final Achievement achievement;
   final bool isTracked;
   final bool isSaving;
@@ -93,7 +90,6 @@ class AchievementTile extends StatelessWidget {
                   if (game.steamAppId != null)
                     AchievementGuideButton(
                       game: game,
-                      storage: storage,
                       achievement: achievement,
                     ),
                   IconButton(

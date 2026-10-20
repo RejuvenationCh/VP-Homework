@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/achievement.dart';
@@ -44,34 +43,6 @@ class GameLibraryStorage {
     final saved = await _games.save(games, previous: previous);
     await _saveGameSnapshot(saved);
     return saved;
-  }
-
-  Future<String?> loadSteamServiceUrl() async {
-    await _ready;
-    final rows = await _database
-        .customSelect(
-          "SELECT value FROM settings WHERE key = 'steam_service_url'",
-        )
-        .get();
-    if (rows.isEmpty) return null;
-    return rows.first.read<String>('value');
-  }
-
-  Future<void> saveSteamServiceUrl(String? value) async {
-    await _ready;
-    if (value == null || value.trim().isEmpty) {
-      await _database.customStatement(
-        "DELETE FROM settings WHERE key = 'steam_service_url'",
-      );
-    } else {
-      await _database.customInsert(
-        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
-        variables: [
-          Variable.withString('steam_service_url'),
-          Variable.withString(value.trim()),
-        ],
-      );
-    }
   }
 
   Future<List<AchievementRecord>> saveAchievementPersonalChanges(

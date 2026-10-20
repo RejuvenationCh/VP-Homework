@@ -69,9 +69,7 @@ class _SteamProfileSettingsCardState extends State<SteamProfileSettingsCard> {
       _message = 'Reading public Steam profile…';
     });
     try {
-      final client = SteamApiClient(
-        baseUrl: await resolveSteamServiceUrl(widget.storage),
-      );
+      final client = SteamApiClient(baseUrl: resolveSteamServiceUrl());
       final profile = await client.resolveProfile(input);
       await widget.storage.saveSteamProfile(profile);
       if (mounted) {

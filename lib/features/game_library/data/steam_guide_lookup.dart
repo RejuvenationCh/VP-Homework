@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/game.dart';
-import 'game_library_storage.dart';
 import 'steam_service_configuration.dart';
 
 class SteamGuideLookupException implements Exception {
@@ -12,7 +11,6 @@ class SteamGuideLookupException implements Exception {
 
 Future<Uri?> findAchievementGuide({
   required Game game,
-  GameLibraryStorage? storage,
   required String achievementName,
 }) async {
   final appId = game.steamAppId;
@@ -24,7 +22,7 @@ Future<Uri?> findAchievementGuide({
     throw const SteamGuideLookupException();
   }
 
-  final requestUri = Uri.parse(await resolveSteamServiceUrl(storage)).replace(
+  final requestUri = Uri.parse(resolveSteamServiceUrl()).replace(
     path: '/v1/steam/guides',
     queryParameters: {'app_id': appId, 'search_text': searchText},
   );

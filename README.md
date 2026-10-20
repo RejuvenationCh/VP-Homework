@@ -47,19 +47,19 @@ In a second terminal, run Flutter with the local Worker URL:
 flutter run -d chrome --dart-define=STEAM_GUIDE_API_BASE_URL=http://127.0.0.1:8787
 ```
 
-Open Settings, enter a public Steam profile URL, vanity name, or SteamID64, and select **Import / refresh games**. Imported games appear in Library. Open a game and choose **View achievements**. The app reads Steam when asked; changes are not live-pushed. The Worker has not been deployed. Public profile data does not verify account ownership.
+Open Settings, enter a public Steam profile URL, vanity name, or SteamID64, and select **Import / refresh games**. Imported games appear in Library. Open a game and choose **View achievements**. The app reads Steam when asked; changes are not live-pushed. The hosted Worker is `https://game-backlog-steam-guides.steam-guides.workers.dev`. Public profile data does not verify account ownership.
 
-Settings also has a **Steam service** URL. Save your hosted HTTPS Worker address there to use Steam on an Android device. Debug builds use the local Worker when no URL is saved. Release builds require a saved URL or the build setting above. Keep the API key on the Worker. A saved URL takes priority over the build setting; **Reset URL** restores the build default.
+The app connects to the hosted Steam service automatically. Settings only needs your Steam profile. The API key stays on the Worker. Developers can override the service with `STEAM_GUIDE_API_BASE_URL` when running or building the app.
 
 If Steam cannot refresh achievements, the app labels saved results and offers Retry. Game covers load automatically for existing Steam imports. Add or edit a manual game to enter its HTTPS cover image URL.
 
 ## Android release
 
 ```sh
-flutter build apk --release
+flutter build apk --release --dart-define=STEAM_GUIDE_API_BASE_URL=https://game-backlog-steam-guides.steam-guides.workers.dev
 ```
 
-The APK is written to `build/app/outputs/flutter-apk/app-release.apk`. Configure a hosted Steam service in Settings after installing, or pass its HTTPS URL with `--dart-define=STEAM_GUIDE_API_BASE_URL=...` while building. The Worker still needs to be deployed separately.
+The APK is written to `build/app/outputs/flutter-apk/app-release.apk`. The app uses `https://game-backlog-steam-guides.steam-guides.workers.dev` automatically. No service URL needs to be entered after installing.
 
 On macOS, if `flutter test` crashes in `parseOtoolArchitectureSections`, use a checkout path without parentheses. Flutter's native-assets parser rejects paths such as `Data C (General)`.
 

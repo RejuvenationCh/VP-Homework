@@ -184,7 +184,6 @@ class _AchievementListState extends State<AchievementList> {
           final record = records[index - 3];
           final achievement = record.achievement;
           return AchievementTile(
-            storage: widget.storage,
             game: widget.game,
             achievement: achievement,
             isTracked: _trackedAchievementIds.contains(achievement.id),

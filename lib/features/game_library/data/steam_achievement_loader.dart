@@ -41,9 +41,7 @@ Future<AchievementLoadResult> loadGameAchievements({
     );
   }
   try {
-    final client = SteamApiClient(
-      baseUrl: await resolveSteamServiceUrl(storage),
-    );
+    final client = SteamApiClient(baseUrl: resolveSteamServiceUrl());
     final result = await client.readAchievements(profile.steamId, appId);
     if (result.status == 'no_achievements') {
       return const AchievementLoadResult(<AchievementRecord>[]);

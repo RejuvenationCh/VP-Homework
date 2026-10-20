@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/steam_guide_lookup.dart';
-import '../data/game_library_storage.dart';
 import '../data/steam_api_parser.dart';
 import '../models/achievement.dart';
 import '../models/game.dart';
@@ -12,12 +11,10 @@ class AchievementGuideButton extends StatefulWidget {
   const AchievementGuideButton({
     super.key,
     required this.game,
-    this.storage,
     required this.achievement,
   });
 
   final Game game;
-  final GameLibraryStorage? storage;
   final Achievement achievement;
 
   @override
@@ -32,7 +29,6 @@ class _AchievementGuideButtonState extends State<AchievementGuideButton> {
     try {
       final guide = await findAchievementGuide(
         game: widget.game,
-        storage: widget.storage,
         achievementName: widget.achievement.name,
       );
       if (!mounted) return;
