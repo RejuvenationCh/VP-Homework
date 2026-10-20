@@ -103,7 +103,6 @@ class _GameLibraryControlsState extends State<GameLibraryControls> {
             ),
             PopupMenuButton<GameLibrarySort>(
               tooltip: 'Sort games',
-              icon: const Icon(Icons.sort),
               initialValue: widget.sort,
               onSelected: widget.onSortChanged,
               itemBuilder: (context) => [
@@ -114,6 +113,20 @@ class _GameLibraryControlsState extends State<GameLibraryControls> {
                     child: Text(option.label),
                   ),
               ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 12,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.sort),
+                    const SizedBox(width: 8),
+                    Text('Sort: ${widget.sort.label}'),
+                  ],
+                ),
+              ),
             ),
             if (widget.hasActiveFilters)
               TextButton(
