@@ -4,8 +4,8 @@ import 'package:drift/drift.dart';
 
 import '../models/achievement.dart';
 import '../models/achievement_record.dart';
-import 'achievement_json.dart';
-import 'achievement_personal_merge.dart';
+import './helpers/achievement_json.dart';
+import './helpers/achievement_personal_merge.dart';
 import 'game_database.dart';
 
 class SqliteAchievementStore {

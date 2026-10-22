@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../features/game_library/data/game_library_storage.dart';
 import '../features/game_library/data/sample_games.dart';
 import '../features/game_library/models/achievement.dart';
-import '../features/game_library/presentation/game_achievements_screen.dart';
+import '../features/game_library/presentation/screens/game_achievements_screen.dart';
 
 enum AchievementDemoData {
   current('Current data'),

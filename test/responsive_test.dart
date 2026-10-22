@@ -5,7 +5,7 @@ import 'package:media_cleaner/dev/responsive_fixtures.dart';
 import 'package:media_cleaner/dev/media_demos/storage_overview_screen.dart';
 import 'package:media_cleaner/dev/media_demos/media_cleaner_screen.dart';
 import 'package:media_cleaner/features/game_library/models/game.dart';
-import 'package:media_cleaner/features/game_library/presentation/game_library_screen.dart';
+import 'package:media_cleaner/features/game_library/presentation/screens/game_library_screen.dart';
 
 void main() {
   testWidgets(

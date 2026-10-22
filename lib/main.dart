@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_theme.dart';
 import 'features/game_library/data/game_library_storage.dart';
-import 'features/game_library/presentation/game_backlog_navigation.dart';
+import './features/game_library/presentation/screens/game_backlog_navigation.dart';
 
 const _appearancePreferenceKey = 'game_backlog.appearance_mode';
 

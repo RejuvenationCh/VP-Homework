@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:media_cleaner/dev/device_harness.dart';
 import 'package:media_cleaner/dev/media_demos/media_cleaner_screen.dart';
 import 'package:media_cleaner/features/game_library/models/game.dart';
-import 'package:media_cleaner/features/game_library/presentation/game_artwork.dart';
-import 'package:media_cleaner/features/game_library/presentation/game_library_screen.dart';
+import 'package:media_cleaner/features/game_library/presentation/widgets/game_artwork.dart';
+import 'package:media_cleaner/features/game_library/presentation/screens/game_library_screen.dart';
 
 import 'support/harness_controls.dart';
 

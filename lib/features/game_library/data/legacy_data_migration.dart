@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/achievement_record.dart';
 import '../models/game.dart';
-import 'achievement_json.dart';
+import './helpers/achievement_json.dart';
 import 'game_database.dart';
 import 'game_json.dart';
 import 'sqlite_achievement_store.dart';

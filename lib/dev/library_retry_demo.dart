@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../features/game_library/data/sample_games.dart';
 import '../features/game_library/models/game.dart';
-import '../features/game_library/presentation/game_library_screen.dart';
+import '../features/game_library/presentation/screens/game_library_screen.dart';
 
 class LibraryRetryDemo extends StatefulWidget {
   const LibraryRetryDemo({super.key});
