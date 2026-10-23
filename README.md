@@ -100,4 +100,3 @@ On macOS, if `flutter test` crashes in `parseOtoolArchitectureSections`, use a c
 - [Architecture](docs/structure.md)
 - [Week 5 reflection](docs/week05/reflection.md)
 
-Release APK: [download](releases/app-release.apk). This local build still needs a clean-device installation check. No GitHub release has been published.
